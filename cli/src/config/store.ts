@@ -1,9 +1,10 @@
+import { applyLegacyEnvironment, LEGACY_HOME_NAMES } from "@soravyn/shared";
 import fs from "node:fs";
 import path from "node:path";
-import { paperclipConfigSchema, type PaperclipConfig } from "./schema.js";
+import { soravynConfigSchema, type SoravynConfig } from "./schema.js";
 import {
   resolveDefaultConfigPath,
-  resolvePaperclipInstanceId,
+  resolveSoravynInstanceId,
 } from "./home.js";
 
 const DEFAULT_CONFIG_BASENAME = "config.json";
@@ -13,10 +14,7 @@ function findConfigFileFromAncestors(startDir: string): string | null {
   let currentDir = absoluteStartDir;
 
   while (true) {
-    const candidate = path.resolve(currentDir, ".opensoul", DEFAULT_CONFIG_BASENAME);
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+    for(const directory of [".soravyn",...LEGACY_HOME_NAMES]){const candidate=path.resolve(currentDir,directory,DEFAULT_CONFIG_BASENAME);if(fs.existsSync(candidate))return candidate;}
 
     const nextDir = path.resolve(currentDir, "..");
     if (nextDir === currentDir) break;
@@ -28,9 +26,10 @@ function findConfigFileFromAncestors(startDir: string): string | null {
 
 export function resolveConfigPath(overridePath?: string): string {
   if (overridePath) return path.resolve(overridePath);
-  const envConfig = process.env.OPENSOUL_CONFIG ?? process.env.PAPERCLIP_CONFIG;
+  applyLegacyEnvironment(process.env);
+  const envConfig = process.env.SORAVYN_CONFIG;
   if (envConfig) return path.resolve(envConfig);
-  return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath(resolvePaperclipInstanceId());
+  return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath(resolveSoravynInstanceId());
 }
 
 function parseJson(filePath: string): unknown {
@@ -84,12 +83,12 @@ function formatValidationError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-export function readConfig(configPath?: string): PaperclipConfig | null {
+export function readConfig(configPath?: string): SoravynConfig | null {
   const filePath = resolveConfigPath(configPath);
   if (!fs.existsSync(filePath)) return null;
   const raw = parseJson(filePath);
   const migrated = migrateLegacyConfig(raw);
-  const parsed = paperclipConfigSchema.safeParse(migrated);
+  const parsed = soravynConfigSchema.safeParse(migrated);
   if (!parsed.success) {
     throw new Error(`Invalid config at ${filePath}: ${formatValidationError(parsed.error)}`);
   }
@@ -97,7 +96,7 @@ export function readConfig(configPath?: string): PaperclipConfig | null {
 }
 
 export function writeConfig(
-  config: PaperclipConfig,
+  config: SoravynConfig,
   configPath?: string,
 ): void {
   const filePath = resolveConfigPath(configPath);

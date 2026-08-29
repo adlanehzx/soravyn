@@ -1,6 +1,6 @@
 import pc from "picocolors";
 
-const OPENSOUL_ART = [
+const SORAVYN_ART = [
   " ██████╗ ██████╗ ███████╗███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗     ",
   "██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔═══██╗██║   ██║██║     ",
   "██║   ██║██████╔╝█████╗  ██╔██╗ ██║███████╗██║   ██║██║   ██║██║     ",
@@ -11,10 +11,10 @@ const OPENSOUL_ART = [
 
 const TAGLINE = "Open-source agentic marketing stack";
 
-export function printOpenSoulCliBanner(): void {
+export function printSORAVYNCliBanner(): void {
   const lines = [
     "",
-    ...OPENSOUL_ART.map((line) => pc.cyan(line)),
+    ...SORAVYN_ART.map((line) => pc.cyan(line)),
     pc.blue("  ───────────────────────────────────────────────────────"),
     pc.bold(pc.white(`  ${TAGLINE}`)),
     "",

@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { and, eq, gt, isNull } from "drizzle-orm";
-import { createDb, instanceUserRoles, invites } from "@paperclipai/db";
+import { createDb, instanceUserRoles, invites } from "@soravyn/db";
 import { readConfig, resolveConfigPath } from "../config/store.js";
 
 function hashToken(token: string) {
@@ -21,7 +21,7 @@ function resolveDbUrl(configPath?: string) {
   }
   if (config?.database.mode === "embedded-postgres") {
     const port = config.database.embeddedPostgresPort ?? 54330;
-    return `postgres://opensoul:opensoul@127.0.0.1:${port}/opensoul`;
+    return `postgres://soravyn:soravyn@127.0.0.1:${port}/soravyn`;
   }
   return null;
 }
@@ -29,8 +29,8 @@ function resolveDbUrl(configPath?: string) {
 function resolveBaseUrl(configPath?: string, explicitBaseUrl?: string) {
   if (explicitBaseUrl) return explicitBaseUrl.replace(/\/+$/, "");
   const fromEnv =
-    process.env.PAPERCLIP_PUBLIC_URL ??
-    process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL ??
+    process.env.SORAVYN_PUBLIC_URL ??
+    process.env.SORAVYN_AUTH_PUBLIC_BASE_URL ??
     process.env.BETTER_AUTH_URL ??
     process.env.BETTER_AUTH_BASE_URL;
   if (fromEnv?.trim()) return fromEnv.trim().replace(/\/+$/, "");
@@ -53,7 +53,7 @@ export async function bootstrapCeoInvite(opts: {
   const configPath = resolveConfigPath(opts.config);
   const config = readConfig(configPath);
   if (!config) {
-    p.log.error(`No config found at ${configPath}. Run ${pc.cyan("opensoulai onboard")} first.`);
+    p.log.error(`No config found at ${configPath}. Run ${pc.cyan("soravyn onboard")} first.`);
     return;
   }
 
@@ -117,6 +117,6 @@ export async function bootstrapCeoInvite(opts: {
     p.log.message(`Expires: ${pc.dim(created.expiresAt.toISOString())}`);
   } catch (err) {
     p.log.error(`Could not create bootstrap invite: ${err instanceof Error ? err.message : String(err)}`);
-    p.log.info("If using embedded-postgres, start the OpenSoul server and run this command again.");
+    p.log.info("If using embedded-postgres, start the SORAVYN server and run this command again.");
   }
 }

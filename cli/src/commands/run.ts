@@ -8,8 +8,8 @@ import { doctor } from "./doctor.js";
 import { configExists, resolveConfigPath } from "../config/store.js";
 import {
   describeLocalInstancePaths,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
+  resolveSoravynHomeDir,
+  resolveSoravynInstanceId,
 } from "../config/home.js";
 
 interface RunOptions {
@@ -20,19 +20,19 @@ interface RunOptions {
 }
 
 export async function runCommand(opts: RunOptions): Promise<void> {
-  const instanceId = resolvePaperclipInstanceId(opts.instance);
-  process.env.PAPERCLIP_INSTANCE_ID = instanceId;
+  const instanceId = resolveSoravynInstanceId(opts.instance);
+  process.env.SORAVYN_INSTANCE_ID = instanceId;
 
-  const homeDir = resolvePaperclipHomeDir();
+  const homeDir = resolveSoravynHomeDir();
   fs.mkdirSync(homeDir, { recursive: true });
 
   const paths = describeLocalInstancePaths(instanceId);
   fs.mkdirSync(paths.instanceRoot, { recursive: true });
 
   const configPath = resolveConfigPath(opts.config);
-  process.env.PAPERCLIP_CONFIG = configPath;
+  process.env.SORAVYN_CONFIG = configPath;
 
-  p.intro(pc.bgCyan(pc.black(" opensoulai run ")));
+  p.intro(pc.bgCyan(pc.black(" soravyn run ")));
   p.log.message(pc.dim(`Home: ${paths.homeDir}`));
   p.log.message(pc.dim(`Instance: ${paths.instanceId}`));
   p.log.message(pc.dim(`Config: ${configPath}`));
@@ -40,7 +40,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
   if (!configExists(configPath)) {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
       p.log.error("No config found and terminal is non-interactive.");
-      p.log.message(`Run ${pc.cyan("opensoulai onboard")} once, then retry ${pc.cyan("opensoulai run")}.`);
+      p.log.message(`Run ${pc.cyan("soravyn onboard")} once, then retry ${pc.cyan("soravyn run")}.`);
       process.exit(1);
     }
 
@@ -60,7 +60,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     process.exit(1);
   }
 
-  p.log.step("Starting Paperclip server...");
+  p.log.step("Starting Soravyn server...");
   await importServerEntry();
 }
 
@@ -94,10 +94,10 @@ function getMissingModuleSpecifier(err: unknown): string | null {
 }
 
 function maybeEnableUiDevMiddleware(entrypoint: string): void {
-  if (process.env.PAPERCLIP_UI_DEV_MIDDLEWARE !== undefined) return;
+  if (process.env.SORAVYN_UI_DEV_MIDDLEWARE !== undefined) return;
   const normalized = entrypoint.replaceAll("\\", "/");
-  if (normalized.endsWith("/server/src/index.ts") || normalized.endsWith("@paperclipai/server/src/index.ts")) {
-    process.env.PAPERCLIP_UI_DEV_MIDDLEWARE = "true";
+  if (normalized.endsWith("/server/src/index.ts") || normalized.endsWith("@soravyn/server/src/index.ts")) {
+    process.env.SORAVYN_UI_DEV_MIDDLEWARE = "true";
   }
 }
 
@@ -111,21 +111,21 @@ async function importServerEntry(): Promise<void> {
     return;
   }
 
-  // Production mode: import the published @paperclipai/server package
+  // Production mode: import the published @soravyn/server package
   try {
-    await import("@paperclipai/server");
+    await import("@soravyn/server");
   } catch (err) {
     const missingSpecifier = getMissingModuleSpecifier(err);
-    const missingServerEntrypoint = !missingSpecifier || missingSpecifier === "@paperclipai/server";
+    const missingServerEntrypoint = !missingSpecifier || missingSpecifier === "@soravyn/server";
     if (isModuleNotFoundError(err) && missingServerEntrypoint) {
       throw new Error(
-        `Could not locate a Paperclip server entrypoint.\n` +
-          `Tried: ${devEntry}, @paperclipai/server\n` +
+        `Could not locate a Soravyn server entrypoint.\n` +
+          `Tried: ${devEntry}, @soravyn/server\n` +
           `${formatError(err)}`,
       );
     }
     throw new Error(
-      `Paperclip server failed to start.\n` +
+      `Soravyn server failed to start.\n` +
         `${formatError(err)}`,
     );
   }

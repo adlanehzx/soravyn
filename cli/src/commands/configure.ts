@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { readConfig, writeConfig, configExists, resolveConfigPath } from "../config/store.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { SoravynConfig } from "../config/schema.js";
 import { ensureLocalSecretsKeyFile } from "../config/secrets-key.js";
 import { promptDatabase } from "../prompts/database.js";
 import { promptLlm } from "../prompts/llm.js";
@@ -13,9 +13,9 @@ import {
   resolveDefaultBackupDir,
   resolveDefaultEmbeddedPostgresDir,
   resolveDefaultLogsDir,
-  resolvePaperclipInstanceId,
+  resolveSoravynInstanceId,
 } from "../config/home.js";
-import { printOpenSoulCliBanner } from "../utils/banner.js";
+import { printSORAVYNCliBanner } from "../utils/banner.js";
 
 type Section = "llm" | "database" | "logging" | "server" | "storage" | "secrets";
 
@@ -28,8 +28,8 @@ const SECTION_LABELS: Record<Section, string> = {
   secrets: "Secrets",
 };
 
-function defaultConfig(): PaperclipConfig {
-  const instanceId = resolvePaperclipInstanceId();
+function defaultConfig(): SoravynConfig {
+  const instanceId = resolveSoravynInstanceId();
   return {
     $meta: {
       version: 1,
@@ -71,17 +71,17 @@ export async function configure(opts: {
   config?: string;
   section?: string;
 }): Promise<void> {
-  printOpenSoulCliBanner();
-  p.intro(pc.bgCyan(pc.black(" opensoul configure ")));
+  printSORAVYNCliBanner();
+  p.intro(pc.bgCyan(pc.black(" soravyn configure ")));
   const configPath = resolveConfigPath(opts.config);
 
   if (!configExists(opts.config)) {
-    p.log.error("No config file found. Run `opensoulai onboard` first.");
+    p.log.error("No config file found. Run `soravyn onboard` first.");
     p.outro("");
     return;
   }
 
-  let config: PaperclipConfig;
+  let config: SoravynConfig;
   try {
     config = readConfig(opts.config) ?? defaultConfig();
   } catch (err) {
@@ -163,7 +163,7 @@ export async function configure(opts: {
           } else if (keyResult.status === "skipped_provider") {
             p.log.message(pc.dim("Skipping local key file management for non-local provider"));
           } else {
-            p.log.message(pc.dim("Skipping local key file management because PAPERCLIP_SECRETS_MASTER_KEY is set"));
+            p.log.message(pc.dim("Skipping local key file management because SORAVYN_SECRETS_MASTER_KEY is set"));
           }
         }
         break;
