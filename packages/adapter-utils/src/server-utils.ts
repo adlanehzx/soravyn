@@ -98,7 +98,7 @@ export function redactEnvForLogs(env: Record<string, string>): Record<string, st
   return redacted;
 }
 
-export function buildPaperclipEnv(agent: { id: string; companyId: string }): Record<string, string> {
+export function buildSoravynEnv(agent: { id: string; companyId: string }): Record<string, string> {
   const resolveHostForUrl = (rawHost: string): string => {
     const host = rawHost.trim();
     if (!host || host === "0.0.0.0" || host === "::") return "localhost";
@@ -106,15 +106,15 @@ export function buildPaperclipEnv(agent: { id: string; companyId: string }): Rec
     return host;
   };
   const vars: Record<string, string> = {
-    PAPERCLIP_AGENT_ID: agent.id,
-    PAPERCLIP_COMPANY_ID: agent.companyId,
+    SORAVYN_AGENT_ID: agent.id,
+    SORAVYN_COMPANY_ID: agent.companyId,
   };
   const runtimeHost = resolveHostForUrl(
-    process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+    process.env.SORAVYN_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3200";
-  const apiUrl = process.env.PAPERCLIP_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
-  vars.PAPERCLIP_API_URL = apiUrl;
+  const runtimePort = process.env.SORAVYN_LISTEN_PORT ?? process.env.PORT ?? "3200";
+  const apiUrl = process.env.SORAVYN_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
+  vars.SORAVYN_API_URL = apiUrl;
   return vars;
 }
 
@@ -220,6 +220,10 @@ export async function runChildProcess(
 
   return new Promise<RunProcessResult>((resolve, reject) => {
     const mergedEnv = ensurePathInEnv({ ...process.env, ...opts.env });
+    // Compatibility for instructions and external runtimes configured before the rebrand.
+    for(const prefix of ["OPENSOUL_","PAPERCLIP_"]){for(const [key,value] of Object.entries(mergedEnv)){if(key.startsWith(prefix)&&value!==undefined){const canonical=`SORAVYN_${key.slice(prefix.length)}`;if(mergedEnv[canonical]===undefined)mergedEnv[canonical]=value;}}}
+    for(const [key,value] of Object.entries(mergedEnv)){if(key.startsWith("SORAVYN_")&&value!==undefined){mergedEnv[`PAPERCLIP_${key.slice(8)}`]=value;}}
+
     const child = spawn(command, args, {
       cwd: opts.cwd,
       env: mergedEnv,
