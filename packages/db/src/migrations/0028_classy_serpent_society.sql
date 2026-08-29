@@ -1,0 +1,2 @@
+ALTER TABLE "studio_campaigns" ADD COLUMN "producer_task_id" uuid;--> statement-breakpoint
+ALTER TABLE "studio_campaigns" ADD CONSTRAINT "studio_campaigns_producer_task_id_issues_id_fk" FOREIGN KEY ("producer_task_id") REFERENCES "public"."issues"("id") ON DELETE no action ON UPDATE no action;
