@@ -1,4 +1,4 @@
-# @paperclipai/shared
+# @soravyn/shared
 
 ## 0.2.7
 

@@ -1,5 +1,5 @@
 {
-  "name": "@paperclipai/adapter-pi-local",
+  "name": "@soravyn/adapter-pi-local",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -40,7 +40,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@paperclipai/adapter-utils": "workspace:*",
+    "@soravyn/adapter-utils": "workspace:*",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

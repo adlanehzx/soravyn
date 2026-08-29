@@ -1,5 +1,5 @@
 {
-  "name": "@paperclipai/server",
+  "name": "@soravyn/server",
   "version": "0.2.7",
   "type": "module",
   "exports": {
@@ -23,23 +23,24 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
-    "dev:watch": "OPENSOUL_MIGRATION_PROMPT=never tsx watch --ignore ../ui/node_modules --ignore ../ui/.vite --ignore ../ui/dist src/index.ts",
+    "dev:watch": "SORAVYN_MIGRATION_PROMPT=never tsx watch --ignore ../ui/node_modules --ignore ../ui/.vite --ignore ../ui/dist src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "video:worker": "tsx src/video-worker.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",
-    "@paperclipai/adapter-claude-local": "workspace:*",
-    "@paperclipai/adapter-codex-local": "workspace:*",
-    "@paperclipai/adapter-cursor-local": "workspace:*",
-    "@paperclipai/adapter-openclaw-gateway": "workspace:*",
-    "@paperclipai/adapter-opencode-local": "workspace:*",
-    "@paperclipai/adapter-pi-local": "workspace:*",
-    "@paperclipai/adapter-utils": "workspace:*",
-    "@paperclipai/db": "workspace:*",
-    "@paperclipai/shared": "workspace:*",
+    "@soravyn/adapter-claude-local": "workspace:*",
+    "@soravyn/adapter-codex-local": "workspace:*",
+    "@soravyn/adapter-cursor-local": "workspace:*",
+    "@soravyn/adapter-openclaw-gateway": "workspace:*",
+    "@soravyn/adapter-opencode-local": "workspace:*",
+    "@soravyn/adapter-pi-local": "workspace:*",
+    "@soravyn/adapter-utils": "workspace:*",
+    "@soravyn/db": "workspace:*",
+    "@soravyn/shared": "workspace:*",
     "better-auth": "1.4.18",
     "detect-port": "^2.1.0",
     "dotenv": "^17.0.1",

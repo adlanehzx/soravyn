@@ -1,4 +1,4 @@
-# @paperclipai/adapter-utils
+# @soravyn/adapter-utils
 
 ## 0.2.7
 
