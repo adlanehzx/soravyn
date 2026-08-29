@@ -249,7 +249,7 @@ export {
 } from "./team-templates.js";
 
 export {
-  paperclipConfigSchema,
+  soravynConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -262,7 +262,7 @@ export {
   storageLocalDiskConfigSchema,
   storageS3ConfigSchema,
   secretsLocalEncryptedConfigSchema,
-  type PaperclipConfig,
+  type SoravynConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,
@@ -276,3 +276,7 @@ export {
   type SecretsLocalEncryptedConfig,
   type ConfigMeta,
 } from "./config-schema.js";
+export { applyLegacyEnvironment, LEGACY_HOME_NAMES, LEGACY_LOCAL_BOARD_EMAIL, LEGACY_AUTH_DEFAULTS } from "./legacy-compat.js";
+export { WORKFLOW_STAGES, startCampaignWorkflowSchema, campaignStrategySchema, submitCampaignDeliverableSchema, authorizeCampaignTaskSchema, type CampaignWorkflowStage } from "./validators/campaign-workflow.js";
+export { scheduleCampaignVideoSchema, recordCampaignDeliverySchema, campaignMeasurementSchema } from "./validators/campaign-workflow.js";
+export type { CampaignStageView, CampaignDeliverableView, CampaignWorkflowView, CampaignScheduleEntry, CampaignOperationalReport } from "./types/campaign-workflow.js";

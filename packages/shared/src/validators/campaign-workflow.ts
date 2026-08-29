@@ -1,0 +1,10 @@
+import { z } from "zod";
+export const WORKFLOW_STAGES=["strategy","script","storyboard"] as const;
+export const startCampaignWorkflowSchema=z.object({strategistId:z.string().uuid(),creativeId:z.string().uuid(),producerId:z.string().uuid()}).strict();
+export const campaignStrategySchema=z.object({summary:z.string().trim().min(10).max(10000),positioning:z.string().trim().min(3).max(2000),keyMessages:z.array(z.string().trim().min(1).max(500)).min(1).max(12),channels:z.array(z.string().trim().min(1).max(80)).min(1).max(12)}).strict();
+export const submitCampaignDeliverableSchema=z.object({content:z.record(z.unknown())}).strict();
+export const authorizeCampaignTaskSchema=z.object({confirmConfiguredModelCosts:z.literal(true)}).strict();
+export type CampaignWorkflowStage=(typeof WORKFLOW_STAGES)[number];
+export const scheduleCampaignVideoSchema=z.object({jobId:z.string().uuid(),channel:z.enum(["tiktok","instagram","youtube","website","manual"]),scheduledAt:z.string().datetime({offset:true})}).strict();
+export const recordCampaignDeliverySchema=z.object({externalUrl:z.string().url().max(4000).refine(value=>/^https?:\/\//.test(value),"Use an HTTP(S) URL").optional()}).strict();
+export const campaignMeasurementSchema=z.object({metric:z.string().trim().min(1).max(200),value:z.number().int().min(0).max(2147483647),target:z.number().int().min(0).max(2147483647).nullable().optional(),unit:z.string().trim().min(1).max(80),source:z.string().trim().min(3).max(2000),measuredAt:z.string().datetime({offset:true})}).strict();

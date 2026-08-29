@@ -1,0 +1,6 @@
+import type { CampaignWorkflowStage } from "../validators/campaign-workflow.js";
+export interface CampaignStageView {id:string;kind:CampaignWorkflowStage;agentId:string;taskId:string;status:string;version:number;}
+export interface CampaignDeliverableView {id:string;stageId:string;version:number;content:Record<string,unknown>;authorType:string;authorId:string;approvalId:string;approvalStatus:string;decisionNote:string|null;videoJobId:string|null;createdAt:string;}
+export interface CampaignWorkflowView {workflow:{brandSnapshot:Record<string,unknown>;briefSnapshot:Record<string,unknown>;createdAt:string};stages:CampaignStageView[];deliverables:CampaignDeliverableView[];corrections:{taskId:string;jobId:string;approvalId:string;status:string}[];}
+export interface CampaignScheduleEntry {id:string;jobId:string;channel:string;scheduledAt:string;status:string;deliveredAt:string|null;externalUrl:string|null;}
+export interface CampaignOperationalReport {generatedAt:string;schedule:CampaignScheduleEntry[];measurements:{id:string;metric:string;value:number;target:number|null;unit:string;source:string;measuredAt:string}[];usage:{reportedCostCents:number;inputTokens:number;outputTokens:number;eventCount:number;coverage:string};marketingResults:string;}
