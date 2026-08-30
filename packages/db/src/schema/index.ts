@@ -32,3 +32,7 @@ export { activityLog } from "./activity_log.js";
 export { companySecrets } from "./company_secrets.js";
 export { companySecretVersions } from "./company_secret_versions.js";
 export { subscriptionPlans, subscriptions } from "./subscriptions.js";
+export { brandProfiles, campaigns } from "./studio.js";
+export { videoJobs } from "./video.js";
+export { campaignWorkflows, campaignStages, campaignDeliverables, campaignCorrections } from "./campaign_workflow.js";
+export { campaignSchedule, campaignMeasurements } from "./campaign_workflow.js";
