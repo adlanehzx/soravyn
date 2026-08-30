@@ -6,12 +6,12 @@ if (!url) throw new Error("DATABASE_URL is required");
 
 const db = createDb(url);
 
-console.log("Seeding opensoul marketing agency...");
+console.log("Seeding soravyn marketing agency...");
 
 const [company] = await db
   .insert(companies)
   .values({
-    name: "opensoul agency",
+    name: "soravyn agency",
     description: "An autonomous AI marketing agency",
     status: "active",
     budgetMonthlyCents: 50000,
@@ -167,5 +167,5 @@ await db.insert(issues).values([
   },
 ]);
 
-console.log("Seed complete — opensoul agency ready");
+console.log("Seed complete — soravyn agency ready");
 process.exit(0);
