@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { projects, projectGoals, goals, projectWorkspaces } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
+import { projects, projectGoals, goals, projectWorkspaces } from "@soravyn/db";
 import {
   PROJECT_COLORS,
   deriveProjectUrlKey,
@@ -8,11 +8,11 @@ import {
   normalizeProjectUrlKey,
   type ProjectGoalRef,
   type ProjectWorkspace,
-} from "@paperclipai/shared";
+} from "@soravyn/shared";
 
 type ProjectRow = typeof projects.$inferSelect;
 type ProjectWorkspaceRow = typeof projectWorkspaces.$inferSelect;
-const REPO_ONLY_CWD_SENTINEL = "/__opensoul_repo_only__";
+const REPO_ONLY_CWD_SENTINEL = "/__soravyn_repo_only__";
 type CreateWorkspaceInput = {
   name?: string | null;
   cwd?: string | null;

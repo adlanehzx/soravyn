@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { subscriptionPlans, subscriptions } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
+import { subscriptionPlans, subscriptions } from "@soravyn/db";
 import { eq, and } from "drizzle-orm";
 
 // Stripe is loaded lazily so the server starts even without the SDK installed

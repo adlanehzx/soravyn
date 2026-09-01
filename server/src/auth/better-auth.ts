@@ -1,10 +1,11 @@
+import { LEGACY_AUTH_DEFAULTS } from "@soravyn/shared";
 import type { Request, RequestHandler } from "express";
 import type { IncomingHttpHeaders } from "node:http";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
 import { eq, and } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
 import {
   authAccounts,
   authSessions,
@@ -13,7 +14,7 @@ import {
   companies,
   companyMemberships,
   instanceUserRoles,
-} from "@paperclipai/db";
+} from "@soravyn/db";
 import type { Config } from "../config.js";
 
 export type BetterAuthSessionUser = {
@@ -71,7 +72,7 @@ export function deriveAuthTrustedOrigins(config: Config): string[] {
 
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?: string[]): BetterAuthInstance {
   const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
-  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.PAPERCLIP_AGENT_JWT_SECRET ?? "paperclip-dev-secret";
+  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.SORAVYN_AGENT_JWT_SECRET ?? LEGACY_AUTH_DEFAULTS.secret;
   const effectiveTrustedOrigins = trustedOrigins ?? deriveAuthTrustedOrigins(config);
 
   const googleClientId = process.env.GOOGLE_CLIENT_ID;

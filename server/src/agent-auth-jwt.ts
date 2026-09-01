@@ -1,3 +1,4 @@
+import { LEGACY_AUTH_DEFAULTS } from "@soravyn/shared";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 interface JwtHeader {
@@ -26,14 +27,14 @@ function parseNumber(value: string | undefined, fallback: number) {
 }
 
 function jwtConfig() {
-  const secret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
+  const secret = process.env.SORAVYN_AGENT_JWT_SECRET;
   if (!secret) return null;
 
   return {
     secret,
-    ttlSeconds: parseNumber(process.env.PAPERCLIP_AGENT_JWT_TTL_SECONDS, 60 * 60 * 48),
-    issuer: process.env.PAPERCLIP_AGENT_JWT_ISSUER ?? "paperclip",
-    audience: process.env.PAPERCLIP_AGENT_JWT_AUDIENCE ?? "paperclip-api",
+    ttlSeconds: parseNumber(process.env.SORAVYN_AGENT_JWT_TTL_SECONDS, 60 * 60 * 48),
+    issuer: process.env.SORAVYN_AGENT_JWT_ISSUER ?? "soravyn",
+    audience: process.env.SORAVYN_AGENT_JWT_AUDIENCE ?? "soravyn-api",
   };
 }
 
@@ -124,8 +125,8 @@ export function verifyLocalAgentJwt(token: string): LocalAgentJwtClaims | null {
 
   const issuer = typeof claims.iss === "string" ? claims.iss : undefined;
   const audience = typeof claims.aud === "string" ? claims.aud : undefined;
-  if (issuer && issuer !== config.issuer) return null;
-  if (audience && audience !== config.audience) return null;
+  if (issuer && issuer !== config.issuer && !(config.issuer === "soravyn" && issuer === LEGACY_AUTH_DEFAULTS.issuer && !process.env.SORAVYN_AGENT_JWT_ISSUER)) return null;
+  if (audience && audience !== config.audience && !(config.audience === "soravyn-api" && audience === LEGACY_AUTH_DEFAULTS.audience && !process.env.SORAVYN_AGENT_JWT_AUDIENCE)) return null;
 
   return {
     sub,

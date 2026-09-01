@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { activityLog, agents, companies, costEvents, heartbeatRuns, issues, projects } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
+import { activityLog, agents, companies, costEvents, heartbeatRuns, issues, projects, goals } from "@soravyn/db";
 import { notFound, unprocessable } from "../errors.js";
 
 export interface CostDateRange {
@@ -22,6 +22,9 @@ export function costService(db: Db) {
         throw unprocessable("Agent does not belong to company");
       }
 
+      if(data.issueId){const [task]=await db.select({id:issues.id}).from(issues).where(and(eq(issues.id,data.issueId),eq(issues.companyId,companyId)));if(!task)throw unprocessable("Cost task must belong to this client");}
+      if(data.projectId){const [project]=await db.select({id:projects.id}).from(projects).where(and(eq(projects.id,data.projectId),eq(projects.companyId,companyId)));if(!project)throw unprocessable("Cost project must belong to this client");}
+      if(data.goalId){const [goal]=await db.select({id:goals.id}).from(goals).where(and(eq(goals.id,data.goalId),eq(goals.companyId,companyId)));if(!goal)throw unprocessable("Cost goal must belong to this client");}
       const event = await db
         .insert(costEvents)
         .values({ ...data, companyId })

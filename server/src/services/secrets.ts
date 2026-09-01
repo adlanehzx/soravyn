@@ -1,8 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companySecrets, companySecretVersions } from "@paperclipai/db";
-import type { AgentEnvConfig, EnvBinding, SecretProvider } from "@paperclipai/shared";
-import { envBindingSchema } from "@paperclipai/shared";
+import type { Db } from "@soravyn/db";
+import { companySecrets, companySecretVersions } from "@soravyn/db";
+import type { AgentEnvConfig, EnvBinding, SecretProvider } from "@soravyn/shared";
+import { applyLegacyEnvironment, envBindingSchema } from "@soravyn/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { getSecretProvider, listSecretProviders } from "../secrets/provider-registry.js";
 
@@ -333,6 +333,7 @@ export function secretService(db: Db) {
 
     resolveAdapterConfigForRuntime: async (companyId: string, adapterConfig: Record<string, unknown>) => {
       const resolved = { ...adapterConfig };
+      if(resolved.soravynApiUrl===undefined&&typeof resolved.paperclipApiUrl==="string")resolved.soravynApiUrl=resolved.paperclipApiUrl;
       if (!Object.prototype.hasOwnProperty.call(adapterConfig, "env")) {
         return resolved;
       }
@@ -357,6 +358,7 @@ export function secretService(db: Db) {
           env[key] = await resolveSecretValue(companyId, binding.secretId, binding.version);
         }
       }
+      applyLegacyEnvironment(env);
       resolved.env = env;
       return resolved;
     },

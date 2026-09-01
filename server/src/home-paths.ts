@@ -1,3 +1,4 @@
+import { applyLegacyEnvironment, LEGACY_HOME_NAMES } from "@soravyn/shared";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,88 +13,51 @@ function expandHomePrefix(value: string): string {
   return value;
 }
 
-/**
- * Migrate legacy ~/.paperclip data to ~/.opensoul on first run after rebrand.
- * Moves instance data (db, config, secrets, workspaces) so existing installs
- * keep working without data loss.
- */
-function migrateLegacyHomeDir(newHome: string): void {
-  const legacyHome = path.resolve(os.homedir(), ".paperclip");
-  if (!fs.existsSync(legacyHome)) return;
-
-  const legacyInstances = path.join(legacyHome, "instances");
-  if (!fs.existsSync(legacyInstances)) return;
-
-  const newInstances = path.join(newHome, "instances");
-
-  // Only migrate if the new instances dir doesn't have a db yet
-  // (i.e., no successful init has happened at the new path)
-  const defaultInstance = path.join(newInstances, "default");
-  const defaultDb = path.join(defaultInstance, "db", "PG_VERSION");
-  if (fs.existsSync(defaultDb)) return;
-
-  // Move each instance dir from legacy to new home
-  for (const entry of fs.readdirSync(legacyInstances)) {
-    const src = path.join(legacyInstances, entry);
-    const dst = path.join(newInstances, entry);
-    if (!fs.statSync(src).isDirectory()) continue;
-
-    // Remove empty destination if it exists (e.g. mkdir'd but no data)
-    if (fs.existsSync(dst)) {
-      try {
-        fs.rmSync(dst, { recursive: true });
-      } catch {
-        continue; // skip if we can't remove, don't overwrite
-      }
-    }
-
-    fs.mkdirSync(path.dirname(dst), { recursive: true });
-    fs.renameSync(src, dst);
-  }
-}
-
-export function resolvePaperclipHomeDir(): string {
-  const envHome = (process.env.OPENSOUL_HOME ?? process.env.PAPERCLIP_HOME)?.trim();
+export function resolveSoravynHomeDir(): string {
+  applyLegacyEnvironment(process.env);
+  const envHome = process.env.SORAVYN_HOME?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
-  const home = path.resolve(os.homedir(), ".opensoul");
-  migrateLegacyHomeDir(home);
+  const home = path.resolve(os.homedir(), ".soravyn");
+  if(!fs.existsSync(home)){
+    for(const name of LEGACY_HOME_NAMES){const legacy=path.resolve(os.homedir(),name);if(fs.existsSync(path.join(legacy,"instances")))return legacy;}
+  }
   return home;
 }
 
-export function resolvePaperclipInstanceId(): string {
-  const raw = (process.env.OPENSOUL_INSTANCE_ID ?? process.env.PAPERCLIP_INSTANCE_ID)?.trim() || DEFAULT_INSTANCE_ID;
+export function resolveSoravynInstanceId(): string {
+  const raw = process.env.SORAVYN_INSTANCE_ID?.trim() || DEFAULT_INSTANCE_ID;
   if (!INSTANCE_ID_RE.test(raw)) {
-    throw new Error(`Invalid PAPERCLIP_INSTANCE_ID '${raw}'.`);
+    throw new Error(`Invalid SORAVYN_INSTANCE_ID '${raw}'.`);
   }
   return raw;
 }
 
-export function resolvePaperclipInstanceRoot(): string {
-  return path.resolve(resolvePaperclipHomeDir(), "instances", resolvePaperclipInstanceId());
+export function resolveSoravynInstanceRoot(): string {
+  return path.resolve(resolveSoravynHomeDir(), "instances", resolveSoravynInstanceId());
 }
 
 export function resolveDefaultConfigPath(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "config.json");
+  return path.resolve(resolveSoravynInstanceRoot(), "config.json");
 }
 
 export function resolveDefaultEmbeddedPostgresDir(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "db");
+  return path.resolve(resolveSoravynInstanceRoot(), "db");
 }
 
 export function resolveDefaultLogsDir(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "logs");
+  return path.resolve(resolveSoravynInstanceRoot(), "logs");
 }
 
 export function resolveDefaultSecretsKeyFilePath(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "secrets", "master.key");
+  return path.resolve(resolveSoravynInstanceRoot(), "secrets", "master.key");
 }
 
 export function resolveDefaultStorageDir(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "data", "storage");
+  return path.resolve(resolveSoravynInstanceRoot(), "data", "storage");
 }
 
 export function resolveDefaultBackupDir(): string {
-  return path.resolve(resolvePaperclipInstanceRoot(), "data", "backups");
+  return path.resolve(resolveSoravynInstanceRoot(), "data", "backups");
 }
 
 export function resolveDefaultAgentWorkspaceDir(agentId: string): string {
@@ -101,7 +65,7 @@ export function resolveDefaultAgentWorkspaceDir(agentId: string): string {
   if (!PATH_SEGMENT_RE.test(trimmed)) {
     throw new Error(`Invalid agent id for workspace path '${agentId}'.`);
   }
-  return path.resolve(resolvePaperclipInstanceRoot(), "workspaces", trimmed);
+  return path.resolve(resolveSoravynInstanceRoot(), "workspaces", trimmed);
 }
 
 export function resolveHomeAwarePath(value: string): string {

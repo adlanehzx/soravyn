@@ -1,7 +1,9 @@
+import { costService } from "./costs.js";
+import { isUuidLike } from "@soravyn/shared";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
 import {
   agents,
   agentRuntimeState,
@@ -12,7 +14,7 @@ import {
   costEvents,
   issues,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@soravyn/db";
 import { conflict, notFound } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { publishLiveEvent } from "./live-events.js";
@@ -28,9 +30,9 @@ import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_MAX = 10;
-const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
+const DEFERRED_WAKE_CONTEXT_KEY = "_soravynWakeContext";
 const startLocksByAgent = new Map<string, Promise<void>>();
-const REPO_ONLY_CWD_SENTINEL = "/__opensoul_repo_only__";
+const REPO_ONLY_CWD_SENTINEL = "/__soravyn_repo_only__";
 
 function appendExcerpt(prev: string, chunk: string) {
   return appendWithCap(prev, chunk, MAX_EXCERPT_BYTES);
@@ -978,26 +980,15 @@ export function heartbeatService(db: Db) {
       .where(eq(agentRuntimeState.agentId, agent.id));
 
     if (additionalCostCents > 0 || hasTokenUsage) {
-      await db.insert(costEvents).values({
-        companyId: agent.companyId,
+      const issueId=readNonEmptyString(run.contextSnapshot?.issueId);
+      const [task]=issueId&&isUuidLike(issueId)?await db.select({id:issues.id,projectId:issues.projectId,goalId:issues.goalId,billingCode:issues.billingCode}).from(issues).where(and(eq(issues.id,issueId),eq(issues.companyId,agent.companyId))):[];
+      await costService(db).createEvent(agent.companyId, {
         agentId: agent.id,
+        issueId:task?.id??null,projectId:task?.projectId??null,goalId:task?.goalId??null,billingCode:task?.billingCode??null,
         provider: result.provider ?? "unknown",
         model: result.model ?? "unknown",
-        inputTokens,
-        outputTokens,
-        costCents: additionalCostCents,
-        occurredAt: new Date(),
+        inputTokens,outputTokens,costCents:additionalCostCents,occurredAt:new Date(),
       });
-    }
-
-    if (additionalCostCents > 0) {
-      await db
-        .update(agents)
-        .set({
-          spentMonthlyCents: sql`${agents.spentMonthlyCents} + ${additionalCostCents}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(agents.id, agent.id));
     }
   }
 
@@ -1140,7 +1131,7 @@ export function heartbeatService(db: Db) {
           ]
         : []),
     ];
-    context.paperclipWorkspace = {
+    context.soravynWorkspace = {
       cwd: resolvedWorkspace.cwd,
       source: resolvedWorkspace.source,
       projectId: resolvedWorkspace.projectId,
@@ -1148,7 +1139,7 @@ export function heartbeatService(db: Db) {
       repoUrl: resolvedWorkspace.repoUrl,
       repoRef: resolvedWorkspace.repoRef,
     };
-    context.paperclipWorkspaces = resolvedWorkspace.workspaceHints;
+    context.soravynWorkspaces = resolvedWorkspace.workspaceHints;
     if (resolvedWorkspace.projectId && !readNonEmptyString(context.projectId)) {
       context.projectId = resolvedWorkspace.projectId;
     }
@@ -1257,7 +1248,7 @@ export function heartbeatService(db: Db) {
         });
       };
       for (const warning of runtimeWorkspaceWarnings) {
-        await onLog("stderr", `[opensoul] ${warning}\n`);
+        await onLog("stderr", `[soravyn] ${warning}\n`);
       }
 
       const config = parseObject(agent.adapterConfig);
@@ -1307,7 +1298,7 @@ export function heartbeatService(db: Db) {
             runId: run.id,
             adapterType: agent.adapterType,
           },
-          "local agent jwt secret missing or invalid; running without injected PAPERCLIP_API_KEY",
+          "local agent jwt secret missing or invalid; running without injected SORAVYN_API_KEY",
         );
       }
       const adapterResult = await adapter.execute({

@@ -1,9 +1,15 @@
+import { campaignWorkflowRoutes } from "./routes/campaign-workflow.js";
+import { legacyApiCompatibility } from "./legacy-api-compat.js";
+import type {} from "./types/express.js";
+import { videoJobRoutes } from "./routes/video-jobs.js";
+import { studioRoutes } from "./routes/studio.js";
+import { videoEnvironmentRoutes } from "./routes/video-environment.js";
 import express, { Router, type Request as ExpressRequest } from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Db } from "@paperclipai/db";
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import type { Db } from "@soravyn/db";
+import type { DeploymentExposure, DeploymentMode } from "@soravyn/shared";
 import type { StorageService } from "./storage/types.js";
 import { httpLogger, errorHandler } from "./middleware/index.js";
 import { actorMiddleware } from "./middleware/auth.js";
@@ -47,6 +53,7 @@ export async function createApp(
   const app = express();
 
   app.use(express.json());
+  app.use(legacyApiCompatibility);
   app.use(httpLogger);
   const privateHostnameGateEnabled =
     opts.deploymentMode === "authenticated" && opts.deploymentExposure === "private";
@@ -74,7 +81,7 @@ export async function createApp(
     }
     res.json({
       session: {
-        id: `paperclip:${req.actor.source}:${req.actor.userId}`,
+        id: `soravyn:${req.actor.source}:${req.actor.userId}`,
         userId: req.actor.userId,
       },
       user: {
@@ -105,6 +112,10 @@ export async function createApp(
   api.use(agentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
   api.use(projectRoutes(db));
+  api.use(videoEnvironmentRoutes());
+  api.use(videoJobRoutes(db));
+  api.use(campaignWorkflowRoutes(db));
+  api.use(studioRoutes(db));
   api.use(issueRoutes(db, opts.storageService));
   api.use(goalRoutes(db));
   api.use(approvalRoutes(db));
@@ -142,7 +153,7 @@ export async function createApp(
         res.status(200).set("Content-Type", "text/html").end(indexHtml);
       });
     } else {
-      console.warn("[opensoul] UI dist not found; running in API-only mode");
+      console.warn("[soravyn] UI dist not found; running in API-only mode");
     }
   }
 

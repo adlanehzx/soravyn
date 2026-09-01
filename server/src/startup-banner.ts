@@ -1,6 +1,7 @@
+import { applyLegacyEnvironment } from "@soravyn/shared";
 import { existsSync, readFileSync } from "node:fs";
-import { resolvePaperclipConfigPath, resolvePaperclipEnvPath } from "./paths.js";
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import { resolveSoravynConfigPath, resolveSoravynEnvPath } from "./paths.js";
+import type { DeploymentExposure, DeploymentMode } from "@soravyn/shared";
 
 import { parse as parseEnvFileContents } from "dotenv";
 
@@ -71,7 +72,7 @@ function resolveAgentJwtSecretStatus(
   status: "pass" | "warn";
   message: string;
 } {
-  const envValue = process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim();
+  const envValue = process.env.SORAVYN_AGENT_JWT_SECRET?.trim();
   if (envValue) {
     return {
       status: "pass",
@@ -81,7 +82,7 @@ function resolveAgentJwtSecretStatus(
 
   if (existsSync(envFilePath)) {
     const parsed = parseEnvFileContents(readFileSync(envFilePath, "utf-8"));
-    const fileValue = typeof parsed.PAPERCLIP_AGENT_JWT_SECRET === "string" ? parsed.PAPERCLIP_AGENT_JWT_SECRET.trim() : "";
+    const fileValue = typeof applyLegacyEnvironment(parsed).SORAVYN_AGENT_JWT_SECRET === "string" ? parsed.SORAVYN_AGENT_JWT_SECRET.trim() : "";
     if (fileValue) {
       return {
         status: "warn",
@@ -92,7 +93,7 @@ function resolveAgentJwtSecretStatus(
 
   return {
     status: "warn",
-    message: "missing (run `pnpm opensoulai onboard`)",
+    message: "missing (run `pnpm soravyn onboard`)",
   };
 }
 
@@ -101,8 +102,8 @@ export function printStartupBanner(opts: StartupBannerOptions): void {
   const baseUrl = `http://${baseHost}:${opts.listenPort}`;
   const apiUrl = `${baseUrl}/api`;
   const uiUrl = opts.uiMode === "none" ? "disabled" : baseUrl;
-  const configPath = resolvePaperclipConfigPath();
-  const envFilePath = resolvePaperclipEnvPath();
+  const configPath = resolveSoravynConfigPath();
+  const envFilePath = resolveSoravynEnvPath();
   const agentJwtSecret = resolveAgentJwtSecretStatus(envFilePath);
 
   const dbMode =
@@ -133,18 +134,9 @@ export function printStartupBanner(opts: StartupBannerOptions): void {
     ? `enabled ${color(`(every ${opts.databaseBackupIntervalMinutes}m, keep ${opts.databaseBackupRetentionDays}d)`, "dim")}`
     : color("disabled", "yellow");
 
-  const art = [
-    color(" ██████╗ ██████╗ ███████╗███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗     ", "cyan"),
-    color("██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔═══██╗██║   ██║██║     ", "cyan"),
-    color("██║   ██║██████╔╝█████╗  ██╔██╗ ██║███████╗██║   ██║██║   ██║██║     ", "cyan"),
-    color("██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║╚════██║██║   ██║██║   ██║██║     ", "cyan"),
-    color("╚██████╔╝██║     ███████╗██║ ╚████║███████║╚██████╔╝╚██████╔╝███████╗", "cyan"),
-    color(" ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝  ╚═════╝ ╚══════╝", "cyan"),
-  ];
-
   const lines = [
+    color("SORAVYN — Autonomous Creative Intelligence", "cyan"),
     "",
-    ...art,
     color("  ───────────────────────────────────────────────────────", "blue"),
     row("Mode", `${dbMode}  |  ${uiMode}`),
     row("Deploy", `${opts.deploymentMode} (${opts.deploymentExposure})`),

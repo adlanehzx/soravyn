@@ -1,3 +1,5 @@
+import { LEGACY_LOCAL_BOARD_EMAIL } from "@soravyn/shared";
+import { resolveEmbeddedIdentity } from "./legacy-database-compat.js";
 /// <reference path="./types/express.d.ts" />
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
@@ -18,7 +20,7 @@ import {
   companies,
   companyMemberships,
   instanceUserRoles,
-} from "@paperclipai/db";
+} from "@soravyn/db";
 import detectPort from "detect-port";
 import postgres from "postgres";
 import { createApp } from "./app.js";
@@ -58,14 +60,14 @@ type EmbeddedPostgresCtor = new (opts: {
 }) => EmbeddedPostgresInstance;
 
 const config = loadConfig();
-if (process.env.PAPERCLIP_SECRETS_PROVIDER === undefined) {
-  process.env.PAPERCLIP_SECRETS_PROVIDER = config.secretsProvider;
+if (process.env.SORAVYN_SECRETS_PROVIDER === undefined) {
+  process.env.SORAVYN_SECRETS_PROVIDER = config.secretsProvider;
 }
-if (process.env.PAPERCLIP_SECRETS_STRICT_MODE === undefined) {
-  process.env.PAPERCLIP_SECRETS_STRICT_MODE = config.secretsStrictMode ? "true" : "false";
+if (process.env.SORAVYN_SECRETS_STRICT_MODE === undefined) {
+  process.env.SORAVYN_SECRETS_STRICT_MODE = config.secretsStrictMode ? "true" : "false";
 }
-if (process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE === undefined) {
-  process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = config.secretsMasterKeyFilePath;
+if (process.env.SORAVYN_SECRETS_MASTER_KEY_FILE === undefined) {
+  process.env.SORAVYN_SECRETS_MASTER_KEY_FILE = config.secretsMasterKeyFilePath;
 }
 
 type MigrationSummary =
@@ -83,8 +85,8 @@ function formatPendingMigrationSummary(migrations: string[]): string {
 }
 
 async function promptApplyMigrations(migrations: string[]): Promise<boolean> {
-  if (process.env.OPENSOUL_MIGRATION_PROMPT === "never") return false;
-  if (process.env.OPENSOUL_MIGRATION_AUTO_APPLY === "true") return true;
+  if (process.env.SORAVYN_MIGRATION_PROMPT === "never") return false;
+  if (process.env.SORAVYN_MIGRATION_AUTO_APPLY === "true") return true;
   if (!stdin.isTTY || !stdout.isTTY) return true;
 
   const prompt = createInterface({ input: stdin, output: stdout });
@@ -160,7 +162,7 @@ function isLoopbackHost(host: string): boolean {
 }
 
 const LOCAL_BOARD_USER_ID = "local-board";
-const LOCAL_BOARD_USER_EMAIL = "local@paperclip.local";
+const LOCAL_BOARD_USER_EMAIL = "local@soravyn.local";
 const LOCAL_BOARD_USER_NAME = "Board";
 
 async function ensureLocalTrustedBoardPrincipal(db: any): Promise<void> {
@@ -182,6 +184,8 @@ async function ensureLocalTrustedBoardPrincipal(db: any): Promise<void> {
       updatedAt: now,
     });
   }
+
+  await db.update(authUsers).set({email:LOCAL_BOARD_USER_EMAIL}).where(and(eq(authUsers.id,LOCAL_BOARD_USER_ID),eq(authUsers.email,LEGACY_LOCAL_BOARD_EMAIL)));
 
   const role = await db
     .select({ id: instanceUserRoles.id })
@@ -251,7 +255,7 @@ if (config.databaseUrl) {
   let port = configuredPort;
   const embeddedPostgresLogBuffer: string[] = [];
   const EMBEDDED_POSTGRES_LOG_BUFFER_LIMIT = 120;
-  const verboseEmbeddedPostgresLogs = process.env.PAPERCLIP_EMBEDDED_POSTGRES_VERBOSE === "true";
+  const verboseEmbeddedPostgresLogs = process.env.SORAVYN_EMBEDDED_POSTGRES_VERBOSE === "true";
   const appendEmbeddedPostgresLog = (message: unknown) => {
     const text = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
     for (const lineRaw of text.split(/\r?\n/)) {
@@ -320,8 +324,8 @@ if (config.databaseUrl) {
     logger.info(`Using embedded PostgreSQL because no DATABASE_URL set (dataDir=${dataDir}, port=${port})`);
     embeddedPostgres = new EmbeddedPostgres({
       databaseDir: dataDir,
-      user: "opensoul",
-      password: "opensoul",
+      user: "soravyn",
+      password: "soravyn",
       port,
       persistent: true,
       onLog: appendEmbeddedPostgresLog,
@@ -352,65 +356,9 @@ if (config.databaseUrl) {
     embeddedPostgresStartedByThisProcess = true;
   }
 
-  // When upgrading from paperclip → opensoul, the existing PG cluster still
-  // has the old "paperclip" role.  Detect this and migrate automatically.
-  const LEGACY_USER = "paperclip";
-  const LEGACY_PASS = "paperclip";
-  const NEW_USER = "opensoul";
-  const NEW_PASS = "opensoul";
-
-  let embeddedAdminConnectionString = `postgres://${NEW_USER}:${NEW_PASS}@127.0.0.1:${port}/postgres`;
-
-  if (clusterAlreadyInitialized) {
-    const probe = postgres(embeddedAdminConnectionString, { max: 1 });
-    try {
-      await probe`select 1`;
-    } catch (probeErr: any) {
-      if (probeErr?.code === "28P01") {
-        logger.info("New credentials rejected by existing cluster; attempting legacy credential migration");
-        const legacyAdmin = `postgres://${LEGACY_USER}:${LEGACY_PASS}@127.0.0.1:${port}/postgres`;
-        const legacySql = postgres(legacyAdmin, { max: 1 });
-        try {
-          // Cannot RENAME the session user, so create the new role and drop the old one
-          await legacySql.unsafe(
-            `CREATE ROLE "${NEW_USER}" WITH SUPERUSER LOGIN PASSWORD '${NEW_PASS}'`,
-          );
-          logger.info(`Migrated embedded PostgreSQL role: ${LEGACY_USER} → ${NEW_USER}`);
-        } finally {
-          await legacySql.end();
-        }
-        // Legacy role may still own databases/objects; leave it in place.
-      } else {
-        throw probeErr;
-      }
-    } finally {
-      await probe.end();
-    }
-  }
-
-  // If a legacy "paperclip" database exists, rename it to "opensoul" before
-  // ensurePostgresDatabase tries to create a fresh one.
-  if (clusterAlreadyInitialized) {
-    const checkLegacy = postgres(embeddedAdminConnectionString, { max: 1 });
-    try {
-      const [hasLegacy] = await checkLegacy`select 1 from pg_database where datname = 'paperclip' limit 1`;
-      const [hasNew] = await checkLegacy`select 1 from pg_database where datname = 'opensoul' limit 1`;
-      if (hasLegacy && !hasNew) {
-        await checkLegacy.unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'paperclip' AND pid <> pg_backend_pid()`);
-        await checkLegacy.unsafe(`ALTER DATABASE "paperclip" RENAME TO "opensoul"`);
-        logger.info(`Migrated embedded PostgreSQL database: paperclip → opensoul`);
-      }
-    } finally {
-      await checkLegacy.end();
-    }
-  }
-
-  const dbStatus = await ensurePostgresDatabase(embeddedAdminConnectionString, "opensoul");
-  if (dbStatus === "created") {
-    logger.info("Created embedded PostgreSQL database: opensoul");
-  }
-
-  const embeddedConnectionString = `postgres://${NEW_USER}:${NEW_PASS}@127.0.0.1:${port}/opensoul`;
+  const identity=await resolveEmbeddedIdentity(port);
+  const dbStatus=await ensurePostgresDatabase(identity.adminUrl,identity.database);
+  const embeddedConnectionString=identity.connectionUrl;
   const shouldAutoApplyFirstRunMigrations = !clusterAlreadyInitialized || dbStatus === "created";
   if (shouldAutoApplyFirstRunMigrations) {
     logger.info("Detected first-run embedded PostgreSQL setup; applying pending migrations automatically");
@@ -470,10 +418,10 @@ if (config.deploymentMode === "authenticated") {
     resolveBetterAuthSessionFromHeaders,
   } = await import("./auth/better-auth.js");
   const betterAuthSecret =
-    process.env.BETTER_AUTH_SECRET?.trim() ?? process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim();
+    process.env.BETTER_AUTH_SECRET?.trim() ?? process.env.SORAVYN_AGENT_JWT_SECRET?.trim();
   if (!betterAuthSecret) {
     throw new Error(
-      "authenticated mode requires BETTER_AUTH_SECRET (or PAPERCLIP_AGENT_JWT_SECRET) to be set",
+      "authenticated mode requires BETTER_AUTH_SECRET (or SORAVYN_AGENT_JWT_SECRET) to be set",
     );
   }
   const derivedTrustedOrigins = deriveAuthTrustedOrigins(config);
@@ -528,9 +476,9 @@ const runtimeApiHost =
   runtimeListenHost === "0.0.0.0" || runtimeListenHost === "::"
     ? "localhost"
     : runtimeListenHost;
-process.env.PAPERCLIP_LISTEN_HOST = runtimeListenHost;
-process.env.PAPERCLIP_LISTEN_PORT = String(listenPort);
-process.env.PAPERCLIP_API_URL = `http://${runtimeApiHost}:${listenPort}`;
+process.env.SORAVYN_LISTEN_HOST = runtimeListenHost;
+process.env.SORAVYN_LISTEN_PORT = String(listenPort);
+process.env.SORAVYN_API_URL = `http://${runtimeApiHost}:${listenPort}`;
 
 setupLiveEventsWebSocketServer(server, db as any, {
   deploymentMode: config.deploymentMode,
@@ -582,7 +530,7 @@ if (config.databaseBackupEnabled) {
         connectionString: activeDatabaseConnectionString,
         backupDir: config.databaseBackupDir,
         retentionDays: config.databaseBackupRetentionDays,
-        filenamePrefix: "paperclip",
+        filenamePrefix: "soravyn",
       });
       logger.info(
         {
@@ -616,7 +564,7 @@ if (config.databaseBackupEnabled) {
 
 server.listen(listenPort, config.host, () => {
   logger.info(`Server listening on ${config.host}:${listenPort}`);
-  if (process.env.PAPERCLIP_OPEN_ON_LISTEN === "true") {
+  if (process.env.SORAVYN_OPEN_ON_LISTEN === "true") {
     const openHost = config.host === "0.0.0.0" || config.host === "::" ? "127.0.0.1" : config.host;
     const url = `http://${openHost}:${listenPort}`;
     void import("open")

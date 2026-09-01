@@ -1,6 +1,7 @@
+import { campaignWorkflowService } from "./campaign-workflow.js";
 import { and, asc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { approvalComments, approvals } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
+import { approvalComments, approvals } from "@soravyn/db";
 import { notFound, unprocessable } from "../errors.js";
 import { agentService } from "./agents.js";
 import { notifyHireApproved } from "./hire-hook.js";
@@ -42,6 +43,8 @@ export function approvalService(db: Db) {
 
     approve: async (id: string, decidedByUserId: string, decisionNote?: string | null) => {
       const existing = await getExistingApproval(id);
+      if(existing.type==="campaign_deliverable")return campaignWorkflowService(db).decide(id,decidedByUserId,"approved",decisionNote);
+      if(existing.type==="video_review")return campaignWorkflowService(db).videoDecision(id,decidedByUserId,"approved",decisionNote);
       if (!canResolveStatuses.has(existing.status)) {
         throw unprocessable("Only pending or revision requested approvals can be approved");
       }
@@ -108,6 +111,8 @@ export function approvalService(db: Db) {
 
     reject: async (id: string, decidedByUserId: string, decisionNote?: string | null) => {
       const existing = await getExistingApproval(id);
+      if(existing.type==="campaign_deliverable")return campaignWorkflowService(db).decide(id,decidedByUserId,"rejected",decisionNote);
+      if(existing.type==="video_review")return campaignWorkflowService(db).videoDecision(id,decidedByUserId,"rejected",decisionNote);
       if (!canResolveStatuses.has(existing.status)) {
         throw unprocessable("Only pending or revision requested approvals can be rejected");
       }
@@ -139,6 +144,8 @@ export function approvalService(db: Db) {
 
     requestRevision: async (id: string, decidedByUserId: string, decisionNote?: string | null) => {
       const existing = await getExistingApproval(id);
+      if(existing.type==="campaign_deliverable")return campaignWorkflowService(db).decide(id,decidedByUserId,"revision_requested",decisionNote);
+      if(existing.type==="video_review")return campaignWorkflowService(db).videoDecision(id,decidedByUserId,"revision_requested",decisionNote);
       if (existing.status !== "pending") {
         throw unprocessable("Only pending approvals can request revision");
       }
@@ -160,6 +167,7 @@ export function approvalService(db: Db) {
 
     resubmit: async (id: string, payload?: Record<string, unknown>) => {
       const existing = await getExistingApproval(id);
+      if(["campaign_deliverable","video_review"].includes(existing.type))throw unprocessable("Submit a new deliverable or video version instead of modifying an immutable approval");
       if (existing.status !== "revision_requested") {
         throw unprocessable("Only revision requested approvals can be resubmitted");
       }

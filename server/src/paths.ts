@@ -1,19 +1,17 @@
+import { applyLegacyEnvironment, LEGACY_HOME_NAMES } from "@soravyn/shared";
 import fs from "node:fs";
 import path from "node:path";
 import { resolveDefaultConfigPath } from "./home-paths.js";
 
-const PAPERCLIP_CONFIG_BASENAME = "config.json";
-const PAPERCLIP_ENV_FILENAME = ".env";
+const SORAVYN_CONFIG_BASENAME = "config.json";
+const SORAVYN_ENV_FILENAME = ".env";
 
 function findConfigFileFromAncestors(startDir: string): string | null {
   const absoluteStartDir = path.resolve(startDir);
   let currentDir = absoluteStartDir;
 
   while (true) {
-    const candidate = path.resolve(currentDir, ".opensoul", PAPERCLIP_CONFIG_BASENAME);
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+    for(const directory of [".soravyn",...LEGACY_HOME_NAMES]){const candidate=path.resolve(currentDir,directory,SORAVYN_CONFIG_BASENAME);if(fs.existsSync(candidate))return candidate;}
 
     const nextDir = path.resolve(currentDir, "..");
     if (nextDir === currentDir) break;
@@ -23,13 +21,14 @@ function findConfigFileFromAncestors(startDir: string): string | null {
   return null;
 }
 
-export function resolvePaperclipConfigPath(overridePath?: string): string {
+export function resolveSoravynConfigPath(overridePath?: string): string {
   if (overridePath) return path.resolve(overridePath);
-  const envConfig = process.env.OPENSOUL_CONFIG ?? process.env.PAPERCLIP_CONFIG;
+  applyLegacyEnvironment(process.env);
+  const envConfig = process.env.SORAVYN_CONFIG;
   if (envConfig) return path.resolve(envConfig);
   return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath();
 }
 
-export function resolvePaperclipEnvPath(overrideConfigPath?: string): string {
-  return path.resolve(path.dirname(resolvePaperclipConfigPath(overrideConfigPath)), PAPERCLIP_ENV_FILENAME);
+export function resolveSoravynEnvPath(overrideConfigPath?: string): string {
+  return path.resolve(path.dirname(resolveSoravynConfigPath(overrideConfigPath)), SORAVYN_ENV_FILENAME);
 }
