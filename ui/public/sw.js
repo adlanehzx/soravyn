@@ -1,4 +1,4 @@
-const CACHE_NAME = "opensoul-v2";
+const CACHE_NAME = "soravyn-v1";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

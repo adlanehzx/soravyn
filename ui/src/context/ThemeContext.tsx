@@ -16,8 +16,8 @@ interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-const THEME_STORAGE_KEY = "opensoul.theme";
-const DARK_THEME_COLOR = "#18181b";
+const THEME_STORAGE_KEY = "soravyn.theme";
+const DARK_THEME_COLOR = "#0D0F14";
 const LIGHT_THEME_COLOR = "#ffffff";
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 

@@ -1,5 +1,8 @@
 const BOARD_ROUTE_ROOTS = new Set([
   "dashboard",
+  "campaigns",
+  "video",
+  "library",
   "companies",
   "company",
   "org",

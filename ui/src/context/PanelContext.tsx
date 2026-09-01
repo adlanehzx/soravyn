@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
-const STORAGE_KEY = "opensoul:panel-visible";
+const STORAGE_KEY = "soravyn:panel-visible";
 
 interface PanelContextValue {
   panelContent: ReactNode | null;
