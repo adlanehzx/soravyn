@@ -1,12 +1,12 @@
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
 import {
   addApprovalCommentSchema,
   createApprovalSchema,
   requestApprovalRevisionSchema,
   resolveApprovalSchema,
   resubmitApprovalSchema,
-} from "@paperclipai/shared";
+} from "@soravyn/shared";
 import { validate } from "../middleware/validate.js";
 import { logger } from "../middleware/logger.js";
 import {
@@ -17,6 +17,7 @@ import {
   secretService,
 } from "../services/index.js";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+import { unprocessable } from "../errors.js";
 import { redactEventPayload } from "../redaction.js";
 
 function redactApprovalPayload<T extends { payload: Record<string, unknown> }>(approval: T): T {
@@ -32,7 +33,11 @@ export function approvalRoutes(db: Db) {
   const heartbeat = heartbeatService(db);
   const issueApprovalsSvc = issueApprovalService(db);
   const secretsSvc = secretService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.SORAVYN_SECRETS_STRICT_MODE === "true";
+  router.param("id",async(req,res,next,id)=>{
+    try{const approval=await svc.getById(id);if(!approval){res.status(404).json({error:"Approval not found"});return;}assertCompanyAccess(req,approval.companyId);next();}catch(error){next(error);}
+  });
+
 
   router.get("/companies/:companyId/approvals", async (req, res) => {
     const companyId = req.params.companyId as string;
@@ -56,6 +61,7 @@ export function approvalRoutes(db: Db) {
   router.post("/companies/:companyId/approvals", validate(createApprovalSchema), async (req, res) => {
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
+    if(["campaign_deliverable","video_review"].includes(req.body.type))throw unprocessable("Create immutable campaign/video approvals through their workflow endpoints");
     const rawIssueIds = req.body.issueIds;
     const issueIds = Array.isArray(rawIssueIds)
       ? rawIssueIds.filter((value: unknown): value is string => typeof value === "string")
@@ -121,7 +127,7 @@ export function approvalRoutes(db: Db) {
   router.post("/approvals/:id/approve", validate(resolveApprovalSchema), async (req, res) => {
     assertBoard(req);
     const id = req.params.id as string;
-    const approval = await svc.approve(id, req.body.decidedByUserId ?? "board", req.body.decisionNote);
+    const approval = await svc.approve(id, req.actor.userId ?? "board", req.body.decisionNote);
     const linkedIssues = await issueApprovalsSvc.listIssuesForApproval(approval.id);
     const linkedIssueIds = linkedIssues.map((issue) => issue.id);
     const primaryIssueId = linkedIssueIds[0] ?? null;
@@ -209,7 +215,7 @@ export function approvalRoutes(db: Db) {
   router.post("/approvals/:id/reject", validate(resolveApprovalSchema), async (req, res) => {
     assertBoard(req);
     const id = req.params.id as string;
-    const approval = await svc.reject(id, req.body.decidedByUserId ?? "board", req.body.decisionNote);
+    const approval = await svc.reject(id, req.actor.userId ?? "board", req.body.decisionNote);
 
     await logActivity(db, {
       companyId: approval.companyId,
@@ -232,7 +238,7 @@ export function approvalRoutes(db: Db) {
       const id = req.params.id as string;
       const approval = await svc.requestRevision(
         id,
-        req.body.decidedByUserId ?? "board",
+        req.actor.userId ?? "board",
         req.body.decisionNote,
       );
 

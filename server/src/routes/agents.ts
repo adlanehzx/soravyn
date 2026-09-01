@@ -1,8 +1,8 @@
 import { Router, type Request } from "express";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { Db } from "@paperclipai/db";
-import { agents as agentsTable, companies, heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@soravyn/db";
+import { agents as agentsTable, companies, heartbeatRuns } from "@soravyn/db";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import {
   createAgentKeySchema,
@@ -17,7 +17,7 @@ import {
   updateAgentSchema,
   getTeamTemplate,
   TEAM_TEMPLATES,
-} from "@paperclipai/shared";
+} from "@soravyn/shared";
 import { validate } from "../middleware/validate.js";
 import {
   agentService,
@@ -33,13 +33,13 @@ import { conflict, forbidden, notFound, unprocessable } from "../errors.js";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import { findServerAdapter, listAdapterModels } from "../adapters/index.js";
 import { redactEventPayload } from "../redaction.js";
-import { runClaudeLogin } from "@paperclipai/adapter-claude-local/server";
+import { runClaudeLogin } from "@soravyn/adapter-claude-local/server";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-} from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "@paperclipai/adapter-opencode-local/server";
+} from "@soravyn/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@soravyn/adapter-cursor-local";
+import { ensureOpenCodeModelConfiguredAndAvailable } from "@soravyn/adapter-opencode-local/server";
 
 export function agentRoutes(db: Db) {
   const DEFAULT_INSTRUCTIONS_PATH_KEYS: Record<string, string> = {
@@ -57,7 +57,7 @@ export function agentRoutes(db: Db) {
   const heartbeat = heartbeatService(db);
   const issueApprovalsSvc = issueApprovalService(db);
   const secretsSvc = secretService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.SORAVYN_SECRETS_STRICT_MODE === "true";
 
   function canCreateAgents(agent: { role: string; permissions: Record<string, unknown> | null | undefined }) {
     if (!agent.permissions || typeof agent.permissions !== "object") return false;
@@ -387,6 +387,8 @@ export function agentRoutes(db: Db) {
   router.param("id", async (req, _res, next, rawId) => {
     try {
       req.params.id = await normalizeAgentReference(req, String(rawId));
+      const target=await svc.getById(req.params.id as string);
+      if(target)assertCompanyAccess(req,target.companyId);
       next();
     } catch (err) {
       next(err);
@@ -1248,6 +1250,8 @@ export function agentRoutes(db: Db) {
   router.delete("/agents/:id/keys/:keyId", async (req, res) => {
     assertBoard(req);
     const keyId = req.params.keyId as string;
+    const keys=await svc.listKeys(req.params.id as string);
+    if(!keys.some(key=>key.id===keyId))throw notFound("Key not found for this agent");
     const revoked = await svc.revokeKey(keyId);
     if (!revoked) {
       res.status(404).json({ error: "Key not found" });
