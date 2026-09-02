@@ -7,8 +7,8 @@ import type {
   HeartbeatRun,
   Approval,
   AgentConfigRevision,
-} from "@paperclipai/shared";
-import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "@soravyn/shared";
+import { isUuidLike, normalizeAgentUrlKey } from "@soravyn/shared";
 import { ApiError, api } from "./client";
 
 export interface AgentKey {
@@ -151,7 +151,7 @@ export const agentsApi = {
   loginWithClaude: (id: string, companyId?: string) =>
     api.post<ClaudeLoginResult>(agentPath(id, companyId, "/claude-login"), {}),
   listTeamTemplates: (companyId: string) =>
-    api.get<import("@paperclipai/shared").TeamTemplate[]>(`/companies/${companyId}/team-templates`),
+    api.get<import("@soravyn/shared").TeamTemplate[]>(`/companies/${companyId}/team-templates`),
   deployTemplate: (
     companyId: string,
     data: { templateId: string; adapterType: string; adapterConfig?: Record<string, unknown> },

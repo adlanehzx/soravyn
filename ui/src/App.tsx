@@ -1,3 +1,6 @@
+import { ContentLibrary } from "./pages/ContentLibrary";
+import { CampaignStudio } from "./pages/CampaignStudio";
+import { VideoStudio } from "./pages/VideoStudio";
 import { useEffect, useRef } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "@/lib/router";
 import { useQuery } from "@tanstack/react-query";
@@ -38,11 +41,11 @@ function BootstrapPendingPage() {
       <div className="rounded-lg border border-border bg-card p-6">
         <h1 className="text-xl font-semibold">Instance setup required</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          No instance admin exists yet. Run this command in your opensoul environment to generate
+          No instance admin exists yet. Run this command in your SORAVYN environment to generate
           the first admin invite URL:
         </p>
         <pre className="mt-4 overflow-x-auto rounded-md border border-border bg-muted/30 p-3 text-xs">
-{`pnpm opensoulai auth bootstrap-ceo`}
+{`pnpm soravyn auth bootstrap-ceo`}
         </pre>
       </div>
     </div>
@@ -94,6 +97,9 @@ function boardRoutes() {
     <>
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
+      <Route path="video" element={<VideoStudio />} />
+      <Route path="library" element={<ContentLibrary />} />
+      <Route path="campaigns" element={<CampaignStudio />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />
       <Route path="org" element={<OrgChart />} />
@@ -220,6 +226,9 @@ export function App() {
           <Route path="agents/:agentId" element={<UnprefixedBoardRedirect />} />
           <Route path="agents/:agentId/:tab" element={<UnprefixedBoardRedirect />} />
           <Route path="agents/:agentId/runs/:runId" element={<UnprefixedBoardRedirect />} />
+          <Route path="campaigns" element={<UnprefixedBoardRedirect />} />
+          <Route path="video" element={<UnprefixedBoardRedirect />} />
+          <Route path="library" element={<UnprefixedBoardRedirect />} />
           <Route path="projects" element={<UnprefixedBoardRedirect />} />
           <Route path="projects/:projectId" element={<UnprefixedBoardRedirect />} />
           <Route path="projects/:projectId/overview" element={<UnprefixedBoardRedirect />} />
