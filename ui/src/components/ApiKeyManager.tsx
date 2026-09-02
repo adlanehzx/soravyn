@@ -16,7 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { CompanySecret } from "@paperclipai/shared";
+import type { CompanySecret } from "@soravyn/shared";
 
 const ANTHROPIC_KEY_NAME = "ANTHROPIC_API_KEY";
 const ANTHROPIC_KEY_PREFIX = "sk-ant-";

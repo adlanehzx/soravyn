@@ -53,7 +53,7 @@ export function Sidebar({ consumerMode = false }: SidebarProps) {
       <div className="flex items-center gap-1 px-3 h-12 shrink-0">
         {consumerMode ? (
           <span className="flex-1 text-sm font-bold text-foreground truncate pl-1">
-            Soulsquad
+            SORAVYN
           </span>
         ) : (
           <>
@@ -88,7 +88,7 @@ export function Sidebar({ consumerMode = false }: SidebarProps) {
             <SquarePen className="h-4 w-4 shrink-0" />
             <span className="truncate">New Issue</span>
           </button>
-          <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
+          <SidebarNavItem to="/dashboard" label="Command Center" icon={LayoutDashboard} liveCount={liveRunCount} />
           <SidebarNavItem
             to="/inbox"
             label="Inbox"
@@ -100,6 +100,9 @@ export function Sidebar({ consumerMode = false }: SidebarProps) {
         </div>
 
         <SidebarSection label="Work">
+          <SidebarNavItem to="/library" label="Content Library" icon={History} />
+          <SidebarNavItem to="/campaigns" label="Campaign Studio" icon={Target} />
+          <SidebarNavItem to="/video" label="Video Studio" icon={LayoutDashboard} />
           <SidebarNavItem to="/issues" label="Issues" icon={CircleDot} />
           {!consumerMode && (
             <SidebarNavItem to="/goals" label="Goals" icon={Target} />

@@ -1,5 +1,5 @@
-import type { TeamTemplate } from "@paperclipai/shared";
-import { TEAM_TEMPLATES } from "@paperclipai/shared";
+import type { TeamTemplate } from "@soravyn/shared";
+import { TEAM_TEMPLATES } from "@soravyn/shared";
 import { cn } from "../lib/utils";
 import { Users, Rocket, FileText, Building2, Check } from "lucide-react";
 

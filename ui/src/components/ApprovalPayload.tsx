@@ -1,6 +1,8 @@
 import { UserPlus, Lightbulb, ShieldCheck } from "lucide-react";
 
 export const typeLabel: Record<string, string> = {
+  campaign_deliverable: "Livrable de campagne",
+  video_review: "Validation vidéo",
   hire_agent: "Hire Agent",
   approve_ceo_strategy: "Director Strategy",
 };

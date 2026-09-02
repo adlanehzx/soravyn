@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTeamTemplate } from "@paperclipai/shared";
+import { getTeamTemplate } from "@soravyn/shared";
 import { agentsApi } from "../api/agents";
 import { secretsApi } from "../api/secrets";
 import { queryKeys } from "../lib/queryKeys";
@@ -19,7 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { CompanySecret } from "@paperclipai/shared";
+import type { CompanySecret } from "@soravyn/shared";
 
 type Step = 1 | 2 | 3 | 4;
 
