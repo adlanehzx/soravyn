@@ -38,12 +38,12 @@ import {
   ListTree,
   MessageSquare,
   MoreHorizontal,
-  Paperclip,
+  Paperclip as AttachmentIcon,
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import type { ActivityEvent } from "@paperclipai/shared";
-import type { Agent, IssueAttachment } from "@paperclipai/shared";
+import type { ActivityEvent } from "@soravyn/shared";
+import type { Agent, IssueAttachment } from "@soravyn/shared";
 
 type CommentReassignment = {
   assigneeAgentId: string | null;
@@ -688,7 +688,7 @@ export function IssueDetail() {
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadAttachment.isPending}
             >
-              <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+              <AttachmentIcon className="h-3.5 w-3.5 mr-1.5" />
               {uploadAttachment.isPending ? "Uploading..." : "Upload image"}
             </Button>
           </div>
@@ -767,7 +767,7 @@ export function IssueDetail() {
             linkedRuns={timelineRuns}
             issueStatus={issue.status}
             agentMap={agentMap}
-            draftKey={`paperclip:issue-comment-draft:${issue.id}`}
+            draftKey={`soravyn:issue-comment-draft:${issue.id}`}
             enableReassign
             reassignOptions={commentReassignOptions}
             currentAssigneeValue={currentAssigneeValue}

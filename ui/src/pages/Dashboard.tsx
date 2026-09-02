@@ -26,7 +26,7 @@ import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Button } from "@/components/ui/button";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue } from "@soravyn/shared";
 
 function getRecentIssues(issues: Issue[]): Issue[] {
   return [...issues]
@@ -99,7 +99,7 @@ export function Dashboard() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const [animatedActivityIds, setAnimatedActivityIds] = useState<Set<string>>(new Set());
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
-    try { return localStorage.getItem("opensoul.welcomeDismissed") === "1"; } catch { return false; }
+    try { return localStorage.getItem("soravyn.welcomeDismissed") === "1"; } catch { return false; }
   });
   const seenActivityIdsRef = useRef<Set<string>>(new Set());
   const hydratedActivityRef = useRef(false);
@@ -239,7 +239,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={LayoutDashboard}
-          message="Welcome to Soulsquad. Set up your first marketing agency and agents to get started."
+          message="Welcome to SORAVYN. Set up your first marketing agency and agents to get started."
           action="Get Started"
           onAction={openOnboarding}
         />
@@ -268,7 +268,7 @@ export function Dashboard() {
         companyPrefix={selectedCompanyPrefix}
         onDismiss={() => {
           setWelcomeDismissed(true);
-          try { localStorage.setItem("opensoul.welcomeDismissed", "1"); } catch {}
+          try { localStorage.setItem("soravyn.welcomeDismissed", "1"); } catch {}
         }}
       />
     );
