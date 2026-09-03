@@ -1,20 +1,20 @@
 FROM ubuntu:24.04
 
 ARG NODE_MAJOR=20
-ARG PAPERCLIPAI_VERSION=latest
+ARG SORAVYNAI_VERSION=latest
 ARG HOST_UID=10001
 
 ENV DEBIAN_FRONTEND=noninteractive \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_OPEN_ON_LISTEN=false \
+  SORAVYN_HOME=/soravyn \
+  SORAVYN_OPEN_ON_LISTEN=false \
   HOST=0.0.0.0 \
   PORT=3200 \
-  HOME=/home/paperclip \
+  HOME=/home/soravyn \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   NPM_CONFIG_UPDATE_NOTIFIER=false \
   NODE_MAJOR=${NODE_MAJOR} \
-  PAPERCLIPAI_VERSION=${PAPERCLIPAI_VERSION}
+  SORAVYNAI_VERSION=${SORAVYNAI_VERSION}
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl gnupg locales \
@@ -26,15 +26,15 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
   && locale-gen en_US.UTF-8 \
-  && groupadd --gid 10001 paperclip \
-  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 paperclip \
-  && mkdir -p /paperclip /home/paperclip/workspace \
-  && chown -R paperclip:paperclip /paperclip /home/paperclip \
+  && groupadd --gid 10001 soravyn \
+  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 soravyn \
+  && mkdir -p /soravyn /home/soravyn/workspace \
+  && chown -R soravyn:soravyn /soravyn /home/soravyn \
   && rm -rf /var/lib/apt/lists/*
 
-VOLUME ["/paperclip"]
-WORKDIR /home/paperclip/workspace
+VOLUME ["/soravyn"]
+WORKDIR /home/soravyn/workspace
 EXPOSE 3200
-USER paperclip
+USER soravyn
 
-CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$PAPERCLIP_HOME\"; npx --yes \"paperclipai@${PAPERCLIPAI_VERSION}\" onboard --yes --data-dir \"$PAPERCLIP_HOME\""]
+CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$SORAVYN_HOME\"; npx --yes \"soravyn@${SORAVYNAI_VERSION}\" onboard --yes --data-dir \"$SORAVYN_HOME\""]

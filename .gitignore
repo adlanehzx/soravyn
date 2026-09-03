@@ -7,7 +7,7 @@ drizzle/meta/
 coverage/
 .DS_Store
 data/
-.paperclip/
+.soravyn/
 .pnpm-store/
 tmp-*
 cli/tmp/
@@ -37,4 +37,16 @@ tmp/
 *.tmp
 .vscode/
 .claude/settings.local.json
+.soravyn-local/
+# Private video artifacts
+/data/video/
+
+# Legacy local state remains private during upgrades.
+.opensoul/
+.paperclip/
 .paperclip-local/
+
+# Local secrets and execution logs
+.env.*
+!.env.example
+*.log

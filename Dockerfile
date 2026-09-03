@@ -27,18 +27,18 @@ COPY --from=deps /app/server/node_modules ./server/node_modules
 COPY --from=deps /app/ui/node_modules ./ui/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
-RUN pnpm --filter @paperclipai/db generate
-RUN pnpm --filter @paperclipai/db build
-RUN pnpm --filter @paperclipai/shared build || true
-RUN pnpm --filter @paperclipai/adapter-utils build || true
-RUN pnpm --filter @paperclipai/adapter-claude-local build || true
-RUN pnpm --filter @paperclipai/adapter-codex-local build || true
-RUN pnpm --filter @paperclipai/adapter-cursor-local build || true
-RUN pnpm --filter @paperclipai/adapter-openclaw-gateway build || true
-RUN pnpm --filter @paperclipai/adapter-opencode-local build || true
-RUN pnpm --filter @paperclipai/adapter-pi-local build || true
-RUN pnpm --filter @paperclipai/ui build
-RUN pnpm --filter @paperclipai/server build
+RUN pnpm --filter @soravyn/db generate
+RUN pnpm --filter @soravyn/db build
+RUN pnpm --filter @soravyn/shared build || true
+RUN pnpm --filter @soravyn/adapter-utils build || true
+RUN pnpm --filter @soravyn/adapter-claude-local build || true
+RUN pnpm --filter @soravyn/adapter-codex-local build || true
+RUN pnpm --filter @soravyn/adapter-cursor-local build || true
+RUN pnpm --filter @soravyn/adapter-openclaw-gateway build || true
+RUN pnpm --filter @soravyn/adapter-opencode-local build || true
+RUN pnpm --filter @soravyn/adapter-pi-local build || true
+RUN pnpm --filter @soravyn/ui build
+RUN pnpm --filter @soravyn/server build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 
 RUN find packages -name "package.json" -exec sed -i -e 's|"./src/\(.*\)\.ts"|"./dist/\1.js"|g' {} +
@@ -61,18 +61,18 @@ COPY --from=build /app/pnpm-lock.yaml ./
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
 
 ENV NODE_ENV=production \
-  HOME=/paperclip \
+  HOME=/soravyn \
   HOST=0.0.0.0 \
   PORT=3200 \
   SERVE_UI=true \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=public
+  SORAVYN_HOME=/soravyn \
+  SORAVYN_INSTANCE_ID=default \
+  SORAVYN_CONFIG=/soravyn/instances/default/config.json \
+  SORAVYN_DEPLOYMENT_MODE=authenticated \
+  SORAVYN_DEPLOYMENT_EXPOSURE=public
 
-VOLUME ["/paperclip"]
-RUN mkdir -p /paperclip/instances/default
+VOLUME ["/soravyn"]
+RUN mkdir -p /soravyn/instances/default
 
 EXPOSE 3200
 CMD ["node", "--import", "./server/node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]

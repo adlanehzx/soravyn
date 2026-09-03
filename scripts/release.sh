@@ -182,7 +182,7 @@ console.log(names.join('\n'));
   else
     echo "Promoted all packages to @latest at v$NEW_VERSION"
     echo ""
-    echo "Verify: npm view paperclipai@latest version"
+    echo "Verify: npm view soravyn@latest version"
     echo ""
     echo "To push:"
     echo "  git push && git push origin v$NEW_VERSION"
@@ -273,17 +273,17 @@ echo "==> Step 4/7: Building all packages..."
 cd "$REPO_ROOT"
 
 # Build packages in dependency order (excluding CLI)
-pnpm --filter @paperclipai/shared build
-pnpm --filter @paperclipai/adapter-utils build
-pnpm --filter @paperclipai/db build
-pnpm --filter @paperclipai/adapter-claude-local build
-pnpm --filter @paperclipai/adapter-codex-local build
-pnpm --filter @paperclipai/adapter-opencode-local build
-pnpm --filter @paperclipai/adapter-openclaw-gateway build
-pnpm --filter @paperclipai/server build
+pnpm --filter @soravyn/shared build
+pnpm --filter @soravyn/adapter-utils build
+pnpm --filter @soravyn/db build
+pnpm --filter @soravyn/adapter-claude-local build
+pnpm --filter @soravyn/adapter-codex-local build
+pnpm --filter @soravyn/adapter-opencode-local build
+pnpm --filter @soravyn/adapter-openclaw-gateway build
+pnpm --filter @soravyn/server build
 
 # Build UI and bundle into server package for static serving
-pnpm --filter @paperclipai/ui build
+pnpm --filter @soravyn/ui build
 rm -rf "$REPO_ROOT/server/ui-dist"
 cp -r "$REPO_ROOT/ui/dist" "$REPO_ROOT/server/ui-dist"
 
@@ -398,7 +398,7 @@ if [ "$canary" = true ]; then
   else
     echo "Published canary at v$NEW_VERSION"
     echo ""
-    echo "Verify: npm view paperclipai@canary version"
+    echo "Verify: npm view soravyn@canary version"
     echo ""
     echo "To promote to latest:"
     echo "  ./scripts/release.sh --promote $NEW_VERSION"
@@ -418,5 +418,5 @@ else
   echo "To push:"
   echo "  git push && git push origin v$NEW_VERSION"
   echo ""
-  echo "GitHub Release: https://github.com/cryppadotta/paperclip/releases/tag/v$NEW_VERSION"
+  echo "Release v$NEW_VERSION prepared for the configured repository"
 fi

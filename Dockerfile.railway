@@ -15,23 +15,23 @@ COPY . .
 RUN pnpm install --no-frozen-lockfile
 
 # Create user and set up directories
-RUN addgroup -g 1001 -S paperclip && \
-    adduser -S -D -H -u 1001 -s /sbin/nologin -G paperclip paperclip && \
-    mkdir -p /paperclip/instances/default && \
-    chown -R paperclip:paperclip /paperclip /app
+RUN addgroup -g 1001 -S soravyn && \
+    adduser -S -D -H -u 1001 -s /sbin/nologin -G soravyn soravyn && \
+    mkdir -p /soravyn/instances/default && \
+    chown -R soravyn:soravyn /soravyn /app
 
-USER paperclip
+USER soravyn
 
 ENV NODE_ENV=production \
   DATABASE_URL="${DATABASE_URL}" \
   PORT=3200 \
   HOST=0.0.0.0 \
   SERVE_UI=true \
-  HOME=/paperclip \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=public
+  HOME=/soravyn \
+  SORAVYN_HOME=/soravyn \
+  SORAVYN_INSTANCE_ID=default \
+  SORAVYN_DEPLOYMENT_MODE=authenticated \
+  SORAVYN_DEPLOYMENT_EXPOSURE=public
 
 EXPOSE 3200
 

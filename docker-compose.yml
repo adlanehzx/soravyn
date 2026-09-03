@@ -2,11 +2,11 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: opensoul
-      POSTGRES_PASSWORD: opensoul
-      POSTGRES_DB: opensoul
+      POSTGRES_USER: "${SORAVYN_DB_USER:-soravyn}"
+      POSTGRES_PASSWORD: "${SORAVYN_DB_PASSWORD:-soravyn}"
+      POSTGRES_DB: "${SORAVYN_DB_NAME:-soravyn}"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opensoul -d opensoul"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -20,19 +20,20 @@ services:
     ports:
       - "3200:3200"
     environment:
-      DATABASE_URL: postgres://opensoul:opensoul@db:5432/opensoul
+      DATABASE_URL: "${DATABASE_URL:-postgres://soravyn:soravyn@db:5432/soravyn}"
       PORT: "3200"
       SERVE_UI: "true"
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
-      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3200}"
+      SORAVYN_DEPLOYMENT_MODE: "authenticated"
+      SORAVYN_DEPLOYMENT_EXPOSURE: "private"
+      SORAVYN_PUBLIC_URL: "${SORAVYN_PUBLIC_URL:-http://localhost:3200}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
-      - opensoul-data:/opensoul
+      - soravyn-data:/soravyn
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
-  opensoul-data:
+  soravyn-data:
+    name: "${SORAVYN_APP_VOLUME:-soravyn-data}"

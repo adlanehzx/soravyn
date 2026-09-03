@@ -1,6 +1,6 @@
 .git
 .github
-.opensoul
+.soravyn
 .pnpm-store
 node_modules
 **/node_modules
@@ -8,3 +8,7 @@ coverage
 data
 tmp
 *.log
+
+# Exclude legacy local state from build contexts too.
+.opensoul
+.paperclip
