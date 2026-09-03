@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';
+const t=JSON.parse(await readFile('/tmp/soravyn-workflow-smoke.json','utf8'));const origin=process.env.SORAVYN_TEST_URL||'http://127.0.0.1:3202';
+async function call(path,method='GET',body,expected=200){const r=await fetch(`${origin}/api${path}`,{method,headers:{'Content-Type':'application/json',Origin:origin},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,expected,JSON.stringify(data));return data;}
+const base=`/companies/${t.companyId}`;const campaign=await call(`${base}/studio/campaigns`,'POST',{name:'Budget boundary verification',objectives:'Verify reported-cost budget gates',brief:'Controlled verification; no external provider charged.'},201);
+const wf=`${base}/studio/campaigns/${campaign.id}/workflow`;await call(wf,'POST',{strategistId:t.team[1],creativeId:t.team[0],producerId:t.team[2]},201);const stage=(await call(wf)).stages.find(s=>s.kind==='strategy');
+await call(`${base}/cost-events`,'POST',{agentId:t.team[1],issueId:stage.taskId,provider:'verification-fixture-no-charge',model:'synthetic-budget-event',costCents:1000,occurredAt:new Date().toISOString()},201);
+assert.equal((await call(`/agents/${t.team[1]}`)).status,'paused');await call(`${wf}/strategy/authorize`,'POST',{confirmConfiguredModelCosts:true},422);
+const foreign=await call(`/companies/${t.otherCompanyId}/issues`,'POST',{title:'Foreign cost reference verification',status:'backlog'},201);
+await call(`${base}/cost-events`,'POST',{agentId:t.team[1],issueId:foreign.id,provider:'verification-fixture-no-charge',model:'must-not-write',costCents:99,occurredAt:new Date().toISOString()},422);
+const report=await call(`${wf}/report`);assert.equal(report.usage.reportedCostCents,1000);assert.equal(report.usage.eventCount,1);
+const result={passed:true,checks:['reported cost linked to campaign task','monthly threshold pauses agent','new stage execution denied after budget exhaustion','foreign-client cost task denied','report sums only linked events'],limitations:['Cost event is synthetic verification data, not a real provider charge','No hard per-campaign monetary cap is claimed']};await writeFile('doc/verification/campaign-budget.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';
+const t=JSON.parse(await readFile('/tmp/soravyn-workflow-smoke.json','utf8'));const origin=process.env.SORAVYN_TEST_URL||t.origin;
+async function call(path,method='GET',body,token){const r=await fetch(`${origin}/api${path}`,{method,headers:{'Content-Type':'application/json',Origin:origin,...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
+const base=`/companies/${t.companyId}/studio`;const c=await call(`${base}/campaigns`,'POST',{name:'Concurrent workflow verification',objectives:'Verify approval locking',brief:'Deterministic control-plane test, no external model.'});assert.equal(c.status,201);
+const wf=`${base}/campaigns/${c.data.id}/workflow`;assert.equal((await call(wf,'POST',{strategistId:t.team[0],creativeId:t.team[1],producerId:t.team[2]})).status,201);
+const key=await call(`/agents/${t.team[1]}/keys`,'POST',{name:'workflow-same-client-permissions'});assert.equal(key.status,201);const token=key.data.token||key.data.key;assert.ok(token);
+const strategy={summary:'A concrete campaign strategy for the verified launch.',positioning:'Clear and premium',keyMessages:['Trust'],channels:['website']};
+assert.equal((await call(wf,'GET',undefined,token)).status,200);
+assert.equal((await call(`${wf}/strategy/deliverables`,'POST',{content:strategy},token)).status,403);
+const submissions=await Promise.all([call(`${wf}/strategy/deliverables`,'POST',{content:strategy}),call(`${wf}/strategy/deliverables`,'POST',{content:strategy})]);assert.deepEqual(submissions.map(r=>r.status).sort(),[201,409]);const deliverable=submissions.find(r=>r.status===201).data;
+const decisions=await Promise.all([call(`/approvals/${deliverable.approvalId}/approve`,'POST',{}),call(`/approvals/${deliverable.approvalId}/approve`,'POST',{})]);assert.deepEqual(decisions.map(r=>r.status).sort(),[200,409]);
+const authorized=await call(`${wf}/script/authorize`,'POST',{confirmConfiguredModelCosts:true});assert.equal(authorized.status,200);assert.equal(authorized.data.status,'active');
+const view=(await call(wf)).data;assert.equal(view.deliverables.length,1);assert.equal(view.stages.find(s=>s.kind==='storyboard').status,'blocked');
+const result={passed:true,checks:['same-client agent can read workflow','wrong agent cannot submit','concurrent submissions produce one version','concurrent approvals advance once','explicit cost consent authorizes task'],adapter:'Configured test process /usr/bin/true; no external LLM',wakeRequested:authorized.data.wakeRequested,runId:authorized.data.runId||null};await writeFile('doc/verification/campaign-concurrency.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));

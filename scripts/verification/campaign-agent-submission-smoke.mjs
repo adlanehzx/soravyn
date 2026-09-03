@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';
+const t=JSON.parse(await readFile('/tmp/soravyn-workflow-smoke.json','utf8'));const origin=process.env.SORAVYN_TEST_URL||'http://127.0.0.1:3202';
+async function call(path,method='GET',body,expected=200,token,runId){const r=await fetch(`${origin}/api${path}`,{method,headers:{'Content-Type':'application/json',Origin:origin,...(token?{Authorization:`Bearer ${token}`} :{}),...(runId?{'x-soravyn-run-id':runId}:{})},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,expected,`${path}: ${JSON.stringify(data)}`);return data;}
+const base=`/companies/${t.companyId}/studio`;const campaign=await call(`${base}/campaigns`,'POST',{name:'Authenticated agent submission verification',objectives:'Verify agent checkout and structured results',brief:'Fixture-based API exercise; no LLM generation.'},201);const wf=`${base}/campaigns/${campaign.id}/workflow`;
+await call(wf,'POST',{strategistId:t.team[0],creativeId:t.team[0],producerId:t.team[0]},201);const key=await call(`/agents/${t.team[0]}/keys`,'POST',{name:'authenticated-submission-test'},201);const token=key.token||key.key;
+const content={summary:'A strategy submitted through a real authenticated agent API key.',positioning:'Structured and traceable',keyMessages:['Verified permissions'],channels:['website']};
+await call(`${wf}/strategy/deliverables`,'POST',{content},403,token);
+const authorized=await call(`${wf}/strategy/authorize`,'POST',{confirmConfiguredModelCosts:true});assert.ok(authorized.runId,'A real process-adapter run should be enqueued');
+await call(`/issues/${authorized.taskId}/checkout`,'POST',{agentId:t.team[0],expectedStatuses:['todo']},200,token,authorized.runId);
+const d=await call(`${wf}/strategy/deliverables`,'POST',{content},201,token,authorized.runId);assert.equal(d.authorType,'agent');assert.equal(d.authorId,t.team[0]);
+await call(`/approvals/${d.approvalId}/approve`,'POST',{});
+const view=await call(wf);assert.equal(view.stages.find(s=>s.kind==='script').status,'ready');
+const result={passed:true,checks:['real agent API key authentication','submission before authorization denied','real process-adapter run','atomic task checkout','assigned active agent submission accepted','author identity preserved','human approval unlocks next stage'],limitations:['The process adapter ran /usr/bin/true; creative content is a test fixture, not LLM output']};await writeFile('doc/verification/campaign-agent-submission.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));

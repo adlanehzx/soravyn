@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+const origin=process.env.SORAVYN_TEST_URL||'http://127.0.0.1:3201';
+async function call(path,method='GET',body,expected=200,token){const r=await fetch(`${origin}/api${path}`,{method,headers:{'Content-Type':'application/json',Origin:origin,...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,expected,`${method} ${path}: ${JSON.stringify(data)}`);return data;}
+const client=await call('/companies','POST',{name:`Workflow verification ${Date.now()}`},201);const other=await call('/companies','POST',{name:`Workflow boundary ${Date.now()}`},201);
+const base=`/companies/${client.id}/studio`;const otherBase=`/companies/${other.id}/studio`;
+await call(`${base}/brand`,'PUT',{name:'SORAVYN',tone:'Premium',languages:['fr'],colors:['#9484FF']});
+const campaign=await call(`${base}/campaigns`,'POST',{name:'Campagne du brief à la livraison',objectives:'Valider le parcours réel',brief:'Une courte présentation premium de Soravyn.'},201);
+const team=[];for(const name of ['Strategist','Creative','Producer'])team.push(await call(`/companies/${client.id}/agents`,'POST',{name:`Test ${name}`,adapterType:'process',adapterConfig:{command:'/usr/bin/true',timeoutSec:10},runtimeConfig:{heartbeat:{enabled:false}},budgetMonthlyCents:1000},201));
+const outsider=await call(`/companies/${other.id}/agents`,'POST',{name:'Other client agent',adapterType:'process',adapterConfig:{command:'/usr/bin/true'},runtimeConfig:{heartbeat:{enabled:false}}},201);
+const key=await call(`/agents/${outsider.id}/keys`,'POST',{name:'workflow-boundary-test'},201);const token=key.token||key.key;
+assert.ok(token,'Agent key response must contain a token');
+const workflow=`${base}/campaigns/${campaign.id}/workflow`;
+await call(workflow,'POST',{strategistId:outsider.id,creativeId:team[1].id,producerId:team[2].id},422);
+await call(workflow,'POST',{strategistId:team[0].id,creativeId:team[1].id,producerId:team[2].id},201);
+await call(workflow,'GET',undefined,403,token);
+await call(workflow,'POST',{strategistId:team[0].id,creativeId:team[1].id,producerId:team[2].id},409);
+let view=await call(workflow);assert.deepEqual(view.stages.map(s=>s.status),['ready','blocked','blocked']);
+await call(`${base}/brand`,'PUT',{name:'New brand name',tone:'Different',colors:['#FF0000']});view=await call(workflow);assert.equal(view.workflow.brandSnapshot.name,'SORAVYN');
+const strategy={summary:'Une stratégie premium fondée sur le brief du client.',positioning:'Création marketing maîtrisée',keyMessages:['Traçabilité','Qualité'],channels:['website']};
+const video={platform:'square',narration:'fr',scenes:[{title:'SORAVYN',text:'Bienvenue chez Soravyn.',duration:4},{title:'Votre prochaine campagne',text:'La création prend vie.',duration:4}]};
+await call(`${workflow}/script/deliverables`,'POST',{content:video},409);
+await call(`${workflow}/strategy/authorize`,'POST',{},400);
+await call(`${workflow}/render`,'POST',{},409);
+const proposed=await call(`${workflow}/strategy/deliverables`,'POST',{content:strategy},201);
+await call(`/approvals/${proposed.approvalId}/reject`,'POST',{},422);
+await call(`/approvals/${proposed.approvalId}/reject`,'POST',{decisionNote:'Préciser les messages et garder le ton premium.'});
+view=await call(workflow);assert.equal(view.stages[0].status,'revision_requested');const correctionTask=view.stages[0].taskId;assert.notEqual(correctionTask,proposed.taskId);
+const fixed=await call(`${workflow}/strategy/deliverables`,'POST',{content:{...strategy,summary:strategy.summary+' Messages précisés pour le lancement.'}},201);assert.equal(fixed.version,2);
+await call(`/approvals/${proposed.approvalId}/approve`,'POST',{},409);
+await call(`/approvals/${fixed.approvalId}/approve`,'POST',{decisionNote:'Stratégie validée.'});
+for(const kind of ['script','storyboard']){const d=await call(`${workflow}/${kind}/deliverables`,'POST',{content:video},201);await call(`/approvals/${d.approvalId}/approve`,'POST',{decisionNote:`${kind} validé.`});}
+const job=await call(`${workflow}/render`,'POST',{},201);assert.equal(job.input.brand.name,'SORAVYN');assert.ok(job.input.deliverableId);
+await call(`${workflow}/render`,'POST',{},409);
+await call(`/companies/${client.id}/video/campaigns/${campaign.id}/jobs`,'POST',video,409);
+const report=await call(`${workflow}/report`);assert.equal(report.usage.eventCount,0);assert.match(report.usage.coverage,/missing|Missing/i);
+await writeFile('/tmp/soravyn-workflow-smoke.json',JSON.stringify({origin,companyId:client.id,otherCompanyId:other.id,campaignId:campaign.id,jobId:job.id,team:team.map(a=>a.id),workflow}));
+console.log(JSON.stringify({passed:true,jobId:job.id,checks:['real PostgreSQL workflow','cross-client team/agent denied','brand snapshot immutable','dependency gates enforced','refusal creates correction task','strategy v2 retained','obsolete approval denied','script and storyboard approved','video queued from approved snapshot','manual render bypass denied','cost coverage explicit'],modelExecution:'No LLM called; structured deliverables supplied by the verification operator'},null,2));
