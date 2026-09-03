@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "same-client agent can read workflow",
+    "wrong agent cannot submit",
+    "concurrent submissions produce one version",
+    "concurrent approvals advance once",
+    "explicit cost consent authorizes task"
+  ],
+  "adapter": "Configured test process /usr/bin/true; no external LLM",
+  "wakeRequested": true,
+  "runId": "951f5603-067f-4436-bfe8-079687c195ed"
+}

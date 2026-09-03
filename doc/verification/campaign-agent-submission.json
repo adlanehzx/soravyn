@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "real agent API key authentication",
+    "submission before authorization denied",
+    "real process-adapter run",
+    "atomic task checkout",
+    "assigned active agent submission accepted",
+    "author identity preserved",
+    "human approval unlocks next stage"
+  ],
+  "limitations": [
+    "The process adapter ran /usr/bin/true; creative content is a test fixture, not LLM output"
+  ]
+}
