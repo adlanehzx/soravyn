@@ -1,41 +1,26 @@
-# Contributing to opensoul
+# Contribuer à SORAVYN
 
-Thanks for wanting to contribute!
+SORAVYN réunit les opérations marketing et la production créative dans une application.
 
-We really appreciate both small fixes and thoughtful larger changes.
+## Installation et vérification
 
-## Two Paths to Get Your Pull Request Accepted
+```sh
+pnpm install
+pnpm dev
+pnpm -r typecheck
+pnpm test:run
+pnpm build
+```
 
-### Path 1: Small, Focused Changes (Fastest way to get merged)
-- Pick **one** clear thing to fix/improve
-- Touch the **smallest possible number of files**
-- Make sure the change is very targeted and easy to review
-- All automated checks pass (including Greptile comments)
-- No new lint/test failures
+Pour le moteur vidéo : consulter doc/VIDEO_WORKER.md. Les rendus utilisent un worker séparé et une image Docker administrée.
 
-These almost always get merged quickly when they're clean.
+## Règles de contribution
 
-### Path 2: Bigger or Impactful Changes
-- **First** talk about it in Discord → #dev channel  
-  → Describe what you're trying to solve  
-  → Share rough ideas / approach
-- Once there's rough agreement, build it
-- In your PR include:
-  - Before / After screenshots (or short video if UI/behavior change)
-  - Clear description of what & why
-  - Proof it works (manual testing notes)
-  - All tests passing
-  - All Greptile + other PR comments addressed
+- Préserver les contrôles d’accès company côté serveur.
+- Synchroniser modèles, migrations, API et interface.
+- Réutiliser les mécanismes de tâches, budgets, approbations et journalisation.
+- Ne jamais intégrer de secret aux sources ou aux logs.
+- Documenter les capacités partielles et distinguer tests simulés et exécutions réelles.
+- Conserver les notices des composants tiers décrites dans THIRD_PARTY_NOTICES.md.
 
-PRs that follow this path are **much** more likely to be accepted, even when they're large.
-
-## General Rules (both paths)
-- Write clear commit messages
-- Keep PR title + description meaningful
-- One PR = one logical change (unless it's a small related group)
-- Run tests locally first
-- Be kind in discussions 😄
-
-Questions? Just ask in #dev — we're happy to help.
-
-Happy hacking!
+Architecture : doc/ARCHITECTURE.md. Fonctionnement et limites : doc/CAMPAIGN_WORKFLOW.md et doc/VIDEO_WORKER.md.
