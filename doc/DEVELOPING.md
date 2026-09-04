@@ -17,11 +17,7 @@ Current implementation status:
 
 ## Dependency Lockfile Policy
 
-GitHub Actions owns `pnpm-lock.yaml`.
-
-- Do not commit `pnpm-lock.yaml` in pull requests.
-- Pull request CI validates dependency resolution when manifests change.
-- Pushes to `master` regenerate `pnpm-lock.yaml` with `pnpm install --lockfile-only --no-frozen-lockfile`, commit it back if needed, and then run verification with `--frozen-lockfile`.
+Commit `pnpm-lock.yaml` together with dependency changes. Local verification and GitHub Actions on `main` use `pnpm install --frozen-lockfile` for reproducible installations. The workflow runs typecheck, unit tests and build; Docker render checks remain separate integration checks.
 
 ## Start Dev
 
