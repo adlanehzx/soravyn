@@ -1,24 +1,19 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "name": "Paperclip",
-  "description": "The control plane for autonomous AI companies",
+  "name": "SORAVYN",
+  "description": "Autonomous Creative Intelligence",
   "theme": "mint",
   "colors": {
-    "primary": "#2563EB",
-    "light": "#3B82F6",
-    "dark": "#1D4ED8"
+    "primary": "#9484FF",
+    "light": "#9484FF",
+    "dark": "#67E8CC"
   },
   "favicon": "/favicon.svg",
   "logo": {
     "dark": "/images/logo-dark.svg",
     "light": "/images/logo-light.svg"
   },
-  "topbarLinks": [
-    {
-      "name": "GitHub",
-      "url": "https://github.com/paperclip-ai/paperclip"
-    }
-  ],
+  "topbarLinks": [],
   "navigation": {
     "tabs": [
       {
@@ -27,7 +22,7 @@
           {
             "group": "Introduction",
             "pages": [
-              "start/what-is-paperclip",
+              "start/what-is-soravyn",
               "start/quickstart",
               "start/core-concepts",
               "start/architecture"
@@ -135,8 +130,5 @@
         ]
       }
     ]
-  },
-  "footerSocials": {
-    "github": "https://github.com/paperclip-ai/paperclip"
   }
 }

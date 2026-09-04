@@ -1,50 +1,41 @@
 ---
-title: Quickstart
-summary: Get Paperclip running in minutes
+title: Démarrage local
+summary: Installer et utiliser SORAVYN depuis le dépôt
 ---
 
-Get Paperclip running locally in under 5 minutes.
+## Prérequis
 
-## Quick Start (Recommended)
+Node.js 22 ou supérieur, pnpm, et Docker pour le worker vidéo. Le serveur peut utiliser PostgreSQL embarqué sans installation séparée.
 
-```sh
-npx paperclipai onboard --yes
-```
-
-This walks you through setup, configures your environment, and gets Paperclip running.
-
-## Local Development
-
-Prerequisites: Node.js 20+ and pnpm 9+.
+Depuis la racine du dépôt SORAVYN :
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-This starts the API server and UI at [http://localhost:3200](http://localhost:3200).
+L’interface et l’API partagent http://localhost:3200. Ne pas exposer le mode local_trusted sur Internet.
 
-No external database required — Paperclip uses an embedded PostgreSQL instance by default.
-
-## One-Command Bootstrap
+## Préparer une production vidéo
 
 ```sh
-pnpm paperclipai run
+pnpm video:image
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DATABASE pnpm video:worker
 ```
 
-This auto-onboards if config is missing, runs health checks with auto-repair, and starts the server.
+Le serveur et le worker doivent partager la même base et le même répertoire SORAVYN_VIDEO_ROOT. Utiliser les paramètres de votre installation, pas des identifiants de production copiés dans les exemples.
 
-## What's Next
+Dans le dashboard : créer un client, enregistrer sa marque, créer une campagne, puis ouvrir Video Studio. Saisir les scènes ou charger un brouillon généré par le modèle local configuré. Lancer le rendu, réviser et approuver avant livraison.
 
-Once Paperclip is running:
+## CLI locale
 
-1. Create your first company in the web UI
-2. Define a company goal
-3. Create a CEO agent and configure its adapter
-4. Build out the org chart with more agents
-5. Set budgets and assign initial tasks
-6. Hit go — agents start their heartbeats and the company runs
+```sh
+pnpm soravyn --help
+pnpm soravyn doctor
+```
 
-<Card title="Core Concepts" href="/start/core-concepts">
-  Learn the key concepts behind Paperclip
-</Card>
+Aucun package public npm ni dépôt distant SORAVYN n’est supposé publié. Les commandes documentées s’exécutent depuis ce dépôt.
+
+## Installation existante
+
+Les nouvelles installations utilisent ~/.soravyn. Les anciennes configurations et données sont reconnues sans déplacement ni suppression. Les détails de compatibilité et les commandes vidéo se trouvent dans doc/IDENTITY_MIGRATION.md et doc/VIDEO_WORKER.md à la racine du dépôt.
