@@ -18,6 +18,8 @@
 
 - [Extensions : création IA, textes, marque, revue client et budgets](STUDIO_EXTENSIONS.md)
 
+- [Reprises de production, compositions et narration](PRODUCTION_RELIABILITY.md)
+
 ## Vérification et références
 
 - [Bilan des vérifications du workflow](verification/campaign-workflow-summary.md)
