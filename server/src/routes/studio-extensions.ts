@@ -35,8 +35,8 @@ export function studioExtensionRoutes(db: Db) {
     });
     await audit(req, "campaign.creative_pack_queued", campaignId); res.status(201).json(job);
   });
-  router.post(`${base}/voice-preview`,validate(z.object({text:z.string().trim().min(1).max(260),narration:z.enum(["fr","en"]),voiceSpeed:z.number().int().min(100).max(220).default(145),voicePitch:z.number().int().min(0).max(99).default(50),pronunciations:z.array(z.object({from:z.string().trim().min(1).max(80),to:z.string().trim().min(1).max(120)}).strict()).max(20).default([])}).strict()),async(req,res)=>{
-    const input=videoInput.parse({platform:"square",scenes:[{title:"Voice preview",text:req.body.text,duration:15}],narration:req.body.narration,voiceSpeed:req.body.voiceSpeed,voicePitch:req.body.voicePitch,pronunciations:req.body.pronunciations});
+  router.post(`${base}/voice-preview`,validate(z.object({normalizeAudio:z.boolean().default(false),voiceGap:z.number().int().min(0).max(20).default(0),text:z.string().trim().min(1).max(260),narration:z.enum(["fr","en"]),voiceSpeed:z.number().int().min(100).max(220).default(145),voicePitch:z.number().int().min(0).max(99).default(50),pronunciations:z.array(z.object({from:z.string().trim().min(1).max(80),to:z.string().trim().min(1).max(120)}).strict()).max(20).default([])}).strict()),async(req,res)=>{
+    const input=videoInput.parse({platform:"square",scenes:[{title:"Voice preview",text:req.body.text,duration:15}],narration:req.body.narration,normalizeAudio:req.body.normalizeAudio,voiceGap:req.body.voiceGap,voiceSpeed:req.body.voiceSpeed,voicePitch:req.body.voicePitch,pronunciations:req.body.pronunciations});
     const [job]=await db.insert(videoJobs).values({companyId:req.params.companyId as string,campaignId:req.params.campaignId as string,input:{...input,kind:"voice_preview",campaignName:"Préécoute narration"},events:[{stage:"voice_preview_queued",at:new Date().toISOString()}]}).returning();
     await audit(req,"campaign.voice_preview_queued",req.params.campaignId as string);res.status(201).json(job);
   });
