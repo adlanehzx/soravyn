@@ -8,7 +8,7 @@ import { resolveEmbeddedIdentity } from "./legacy-database-compat.js";
 import { readFileSync } from "node:fs";
 import { getStorageService } from "./storage/index.js";
 import { generateVideoScript } from "./services/video-script.js";
-import { createDb, videoJobs, approvals, assets, campaigns, campaignDeliverables } from "@soravyn/db";
+import { createDb, companyGovernance, videoJobs, approvals, assets, campaigns, campaignDeliverables } from "@soravyn/db";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { randomUUID, createHash } from "node:crypto";
 import { mkdir, writeFile, rename, readFile, copyFile } from "node:fs/promises";
@@ -36,8 +36,14 @@ async function once(){
  await db.update(videoJobs).set({status:"failed",error:"Worker lease expired; retry limit reached",leaseToken:null,leaseUntil:null,updatedAt:new Date()}).where(and(scope,eq(videoJobs.status,"running"),lt(videoJobs.leaseUntil,new Date()),sql`${videoJobs.attempts} >= 2`));
  await db.update(videoJobs).set({status:"queued",leaseToken:null,leaseUntil:null,updatedAt:new Date()}).where(and(scope,eq(videoJobs.status,"running"),lt(videoJobs.leaseUntil,new Date()),sql`${videoJobs.attempts} < 2`));
  const job=await db.transaction(async tx=>{
-  const [candidate]=await tx.select().from(videoJobs).where(and(scope,eq(videoJobs.status,"queued"))).orderBy(videoJobs.createdAt).limit(1).for("update",{skipLocked:true});
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext('soravyn:video-admission'))`);
+  const active=await tx.select({companyId:videoJobs.companyId}).from(videoJobs).where(eq(videoJobs.status,"running"));
+  const globalLimit=Number(process.env.SORAVYN_MAX_VIDEO_RUNS||2);
+  if(active.length>=(Number.isInteger(globalLimit)&&globalLimit>=1&&globalLimit<=32?globalLimit:2))return null;
+  const [candidate]=await tx.select().from(videoJobs).where(and(scope,eq(videoJobs.status,"queued"),sql`(select count(*) from studio_video_jobs as active_jobs where active_jobs.company_id=${videoJobs.companyId} and active_jobs.status='running') < coalesce((select max_video_runs from company_governance where company_id=${videoJobs.companyId}),1)`)).orderBy(videoJobs.createdAt).limit(1).for("update",{skipLocked:true});
   if(!candidate)return null;
+  const [governance]=await tx.select().from(companyGovernance).where(eq(companyGovernance.companyId,candidate.companyId));
+  if(active.filter(row=>row.companyId===candidate.companyId).length>=(governance?.maxVideoRuns||1))return null;
   const [claimed]=await tx.update(videoJobs).set({status:"running",leaseToken:randomUUID(),leaseUntil:new Date(Date.now()+20*60_000),attempts:candidate.attempts+1,updatedAt:new Date()}).where(eq(videoJobs.id,candidate.id)).returning();return claimed;
  });
  if(!job)return false;

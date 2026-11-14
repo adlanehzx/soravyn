@@ -1,10 +1,11 @@
+import { normalizeWorkspaceRole, agentPolicyInput } from "../services/governance-contract.js";
 import { createHash } from "node:crypto";
 import type { IncomingMessage, Server as HttpServer } from "node:http";
 import { createRequire } from "node:module";
 import type { Duplex } from "node:stream";
 import { and, eq, isNull } from "drizzle-orm";
 import type { Db } from "@soravyn/db";
-import { agentApiKeys, companyMemberships, instanceUserRoles } from "@soravyn/db";
+import { agentExecutionPolicies, agentApiKeys, companyMemberships, instanceUserRoles } from "@soravyn/db";
 import type { DeploymentMode } from "@soravyn/shared";
 import type { BetterAuthSessionResult } from "../auth/better-auth.js";
 import { logger } from "../middleware/logger.js";
@@ -131,7 +132,7 @@ async function authorizeUpgrade(
         .where(and(eq(instanceUserRoles.userId, userId), eq(instanceUserRoles.role, "instance_admin")))
         .then((rows) => rows[0] ?? null),
       db
-        .select({ companyId: companyMemberships.companyId })
+        .select({ companyId: companyMemberships.companyId,membershipRole:companyMemberships.membershipRole })
         .from(companyMemberships)
         .where(
           and(
@@ -142,7 +143,7 @@ async function authorizeUpgrade(
         ),
     ]);
 
-    const hasCompanyMembership = memberships.some((row) => row.companyId === companyId);
+    const hasCompanyMembership = memberships.some((row) => row.companyId === companyId && ["admin","project_manager"].includes(normalizeWorkspaceRole(row.membershipRole)));
     if (!roleRow && !hasCompanyMembership) return null;
 
     return {
@@ -168,6 +169,8 @@ async function authorizeUpgrade(
     .set({ lastUsedAt: new Date() })
     .where(eq(agentApiKeys.id, key.id));
 
+  const [policyRow]=await db.select().from(agentExecutionPolicies).where(eq(agentExecutionPolicies.agentId,key.agentId));
+  if(policyRow){const policy=agentPolicyInput.parse(policyRow.policy);if(policy.mode==="blocked"||!policy.apiCapabilities.includes("activity.read"))return null;}
   return {
     companyId,
     actorType: "agent",

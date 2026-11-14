@@ -28,6 +28,7 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
 
     const authHeader = req.header("authorization");
     if (!authHeader?.toLowerCase().startsWith("bearer ")) {
+      if(authHeader)req.actor={type:"none",source:"none"};
       if (opts.deploymentMode === "authenticated" && opts.resolveSession) {
         let session: BetterAuthSessionResult | null = null;
         try {
@@ -47,7 +48,7 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
               .where(and(eq(instanceUserRoles.userId, userId), eq(instanceUserRoles.role, "instance_admin")))
               .then((rows) => rows[0] ?? null),
             db
-              .select({ companyId: companyMemberships.companyId })
+              .select({ companyId: companyMemberships.companyId, membershipRole:companyMemberships.membershipRole })
               .from(companyMemberships)
               .where(
                 and(
@@ -61,6 +62,7 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
             type: "board",
             userId,
             companyIds: memberships.map((row) => row.companyId),
+            companyRoles:Object.fromEntries(memberships.map(row=>[row.companyId,row.membershipRole||"project_manager"])),
             isInstanceAdmin: Boolean(roleRow),
             runId: runIdHeader ?? undefined,
             source: "session",
@@ -74,6 +76,8 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
       return;
     }
 
+    // A rejected bearer credential must never fall back to the implicit local administrator.
+    req.actor={type:"none",source:"none"};
     const token = authHeader.slice("bearer ".length).trim();
     if (!token) {
       next();
@@ -110,6 +114,7 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
         return;
       }
 
+      if(runIdHeader&&claims.run_id&&runIdHeader!==claims.run_id){next();return;}
       req.actor = {
         type: "agent",
         agentId: claims.sub,

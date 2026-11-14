@@ -1,3 +1,4 @@
+import { normalizeWorkspaceRole } from "../services/governance-contract.js";
 import { Router } from "express";
 import type { Db } from "@soravyn/db";
 import {
@@ -20,7 +21,8 @@ export function companyRoutes(db: Db) {
 
   router.get("/", async (req, res) => {
     assertBoard(req);
-    const result = await svc.list();
+    const source = await svc.list();
+    const result=source.map(company=>{const role=req.actor.type==="board"&&(req.actor.source==="local_implicit"||req.actor.isInstanceAdmin)?"admin":normalizeWorkspaceRole(req.actor.type==="board"?req.actor.companyRoles?.[company.id]:null);return role==="client"?{id:company.id,name:company.name,description:company.description,status:company.status,issuePrefix:company.issuePrefix,brandColor:company.brandColor,createdAt:company.createdAt,updatedAt:company.updatedAt,accessRole:role}:{...company,accessRole:role};});
     if (req.actor.source === "local_implicit" || req.actor.isInstanceAdmin) {
       res.json(result);
       return;
@@ -39,7 +41,7 @@ export function companyRoutes(db: Db) {
       res.json(stats);
       return;
     }
-    const filtered = Object.fromEntries(Object.entries(stats).filter(([companyId]) => allowed.has(companyId)));
+    const filtered = Object.fromEntries(Object.entries(stats).filter(([companyId]) => allowed.has(companyId)&&normalizeWorkspaceRole(req.actor.type==="board"?req.actor.companyRoles?.[companyId]:null)!=="client"));
     res.json(filtered);
   });
 
@@ -59,7 +61,8 @@ export function companyRoutes(db: Db) {
       res.status(404).json({ error: "Company not found" });
       return;
     }
-    res.json(company);
+    const role=req.actor.type==="board"&&(req.actor.source==="local_implicit"||req.actor.isInstanceAdmin)?"admin":normalizeWorkspaceRole(req.actor.type==="board"?req.actor.companyRoles?.[companyId]:null);
+    res.json(role==="client"?{id:company.id,name:company.name,issuePrefix:company.issuePrefix,brandColor:company.brandColor,accessRole:role}:{...company,accessRole:role});
   });
 
   router.post("/:companyId/export", validate(companyPortabilityExportSchema), async (req, res) => {

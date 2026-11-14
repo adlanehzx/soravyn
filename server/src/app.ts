@@ -1,3 +1,7 @@
+import { operationsRoutes } from "./routes/operations.js";
+import { governanceRoutes } from "./routes/governance.js";
+import { clientDeliveryRoutes } from "./routes/client-deliveries.js";
+import { workspacePermissions } from "./middleware/workspace-permissions.js";
 import { clientReviewRoutes } from "./routes/client-review.js";
 import { studioExtensionRoutes } from "./routes/studio-extensions.js";
 import { videoCollaborationRoutes } from "./routes/video-collaboration.js";
@@ -104,6 +108,7 @@ export async function createApp(
   // Mount API routes
   const api = Router();
   api.use(boardMutationGuard());
+  api.use(workspacePermissions(db));
   api.use(
     "/health",
     healthRoutes(db, {
@@ -114,6 +119,9 @@ export async function createApp(
     }),
   );
   api.use("/companies", companyRoutes(db));
+  api.use(operationsRoutes(db));
+  api.use(governanceRoutes(db));
+  api.use(clientDeliveryRoutes(db));
   api.use(agentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
   api.use(projectRoutes(db));

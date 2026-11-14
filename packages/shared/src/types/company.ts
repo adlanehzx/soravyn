@@ -1,6 +1,7 @@
 import type { CompanyStatus } from "../constants.js";
 
 export interface Company {
+  accessRole?: "admin"|"project_manager"|"creative"|"client";
   id: string;
   name: string;
   description: string | null;

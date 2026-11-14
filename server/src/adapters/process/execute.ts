@@ -38,6 +38,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const proc = await runChildProcess(runId, command, args, {
     cwd,
     env,
+    ...(ctx.context.recoveryCheckpoint?{stdin:JSON.stringify({recoveryCheckpoint:ctx.context.recoveryCheckpoint})}:{}),
     timeoutSec,
     graceSec,
     onLog,

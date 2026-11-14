@@ -1,3 +1,4 @@
+import { creativeQuality } from "../services/creative-quality.js";
 import { Router } from "express";
 import { and, desc, eq, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
@@ -9,7 +10,7 @@ import { logActivity } from "../services/activity-log.js";
 import { marketingCopyInput } from "../services/campaign-creative.js";
 import { videoInput } from "../services/video-contract.js";
 import { localScriptConfig } from "../services/video-script.js";
-import { campaignBudgetView } from "../services/campaign-budget.js";
+import { campaignBudgetView, reserveCampaignTask } from "../services/campaign-budget.js";
 
 export function studioExtensionRoutes(db: Db) {
   const router = Router(); const base = "/companies/:companyId/studio/campaigns/:campaignId";
@@ -40,7 +41,8 @@ export function studioExtensionRoutes(db: Db) {
     const [job]=await db.insert(videoJobs).values({companyId:req.params.companyId as string,campaignId:req.params.campaignId as string,input:{...input,kind:"voice_preview",campaignName:"Préécoute narration"},events:[{stage:"voice_preview_queued",at:new Date().toISOString()}]}).returning();
     await audit(req,"campaign.voice_preview_queued",req.params.campaignId as string);res.status(201).json(job);
   });
-  router.get(`${base}/copy`, async (req, res) => res.json(await db.select().from(campaignCopy).where(and(eq(campaignCopy.companyId, req.params.companyId as string), eq(campaignCopy.campaignId, req.params.campaignId as string))).orderBy(desc(campaignCopy.createdAt))));
+  async function qualityContext(companyId:string,campaignId:string){const [workflow]=await db.select().from(campaignWorkflows).where(and(eq(campaignWorkflows.companyId,companyId),eq(campaignWorkflows.campaignId,campaignId)));if(workflow)return {brand:workflow.brandSnapshot,brief:workflow.briefSnapshot};const [campaign]=await db.select().from(campaigns).where(and(eq(campaigns.id,campaignId),eq(campaigns.companyId,companyId)));const [brand]=await db.select().from(brandProfiles).where(eq(brandProfiles.companyId,companyId));return {brand,brief:campaign};}
+  router.get(`${base}/copy`, async (req, res) => {const context=await qualityContext(req.params.companyId as string,req.params.campaignId as string);const rows=await db.select().from(campaignCopy).where(and(eq(campaignCopy.companyId,req.params.companyId as string),eq(campaignCopy.campaignId,req.params.campaignId as string))).orderBy(desc(campaignCopy.createdAt));res.json(rows.map(row=>({...row,quality:creativeQuality({title:row.title,body:row.body},context)})));});
   router.post(`${base}/copy`, validate(marketingCopyInput), async (req, res) => {
     const companyId = req.params.companyId as string; const campaignId = req.params.campaignId as string;
     if (req.body.sourceJobId) {const [job] = await db.select().from(videoJobs).where(and(eq(videoJobs.id, req.body.sourceJobId), eq(videoJobs.companyId, companyId), eq(videoJobs.campaignId, campaignId))); if (!job) throw unprocessable("Invalid source job");}
@@ -48,6 +50,9 @@ export function studioExtensionRoutes(db: Db) {
     const [copy] = await db.insert(campaignCopy).values({...req.body, companyId, campaignId}).returning(); await audit(req, "campaign.copy_created", campaignId); res.status(201).json(copy);
   });
   router.post(`${base}/copy/:copyId/decision`, validate(z.object({decision: z.enum(["approved", "rejected"]), note: z.string().trim().max(2000).default("")}).strict()), async (req, res) => {
+    const [sourceCopy]=await db.select().from(campaignCopy).where(and(eq(campaignCopy.id,z.string().uuid().parse(req.params.copyId)),eq(campaignCopy.companyId,req.params.companyId as string),eq(campaignCopy.campaignId,req.params.campaignId as string)));
+    if(!sourceCopy)throw notFound("Copy not found");
+    if(req.body.decision==="approved"&&!req.body.note&&creativeQuality({title:sourceCopy.title,body:sourceCopy.body},await qualityContext(req.params.companyId as string,req.params.campaignId as string)).findings.some(f=>f.severity==="error"))throw unprocessable("Correct unfinished content or explain the approval");
     if (req.body.decision === "rejected" && !req.body.note) throw unprocessable("A correction comment is required");
     const [copy] = await db.update(campaignCopy).set({status: req.body.decision, decisionNote: req.body.note}).where(and(eq(campaignCopy.id, z.string().uuid().parse(req.params.copyId)), eq(campaignCopy.companyId, req.params.companyId as string), eq(campaignCopy.campaignId, req.params.campaignId as string), eq(campaignCopy.status, "draft"))).returning();
     if (!copy) throw conflict("Draft not available or already decided"); await audit(req, "campaign.copy_decided", req.params.campaignId as string); res.json(copy);
@@ -62,6 +67,11 @@ export function studioExtensionRoutes(db: Db) {
       await tx.insert(campaignBudgets).values({companyId, campaignId, limitCents: req.body.limitCents}).onConflictDoUpdate({target: campaignBudgets.campaignId, set: {limitCents: req.body.limitCents, updatedAt: new Date()}});
       return campaignBudgetView(tx as unknown as Db, companyId, campaignId);
     }); await audit(req, "campaign.budget_updated", campaignId); res.json(result);
+  });
+  router.post(`${base}/budget/reservations`,validate(z.object({taskId:z.string().uuid(),maximumCostCents:z.number().int().min(1).max(2147483647),confirmConfiguredModelCosts:z.literal(true)}).strict()),async(req,res)=>{
+    const companyId=req.params.companyId as string,campaignId=req.params.campaignId as string;
+    await db.transaction(async tx=>{await reserveCampaignTask(tx as unknown as Db,companyId,campaignId,req.body.taskId,req.body.maximumCostCents);});
+    await audit(req,"campaign.budget_reauthorized",campaignId);res.json(await campaignBudgetView(db,companyId,campaignId));
   });
   router.post(`${base}/budget/:reservationId/release`, validate(z.object({}).strict()), async (req, res) => {
     const [existing]=await db.select().from(campaignReservations).where(and(eq(campaignReservations.id,z.string().uuid().parse(req.params.reservationId)),eq(campaignReservations.companyId,req.params.companyId as string),eq(campaignReservations.campaignId,req.params.campaignId as string)));

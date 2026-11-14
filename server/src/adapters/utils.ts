@@ -34,6 +34,7 @@ export async function runChildProcess(
   args: string[],
   opts: {
     cwd: string;
+    stdin?:string;
     env: Record<string, string>;
     timeoutSec: number;
     graceSec: number;

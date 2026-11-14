@@ -1,6 +1,15 @@
 import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import type { Db } from "@soravyn/db";
-import { activityLog, agents, companies, costEvents, heartbeatRuns, issues, projects, goals } from "@soravyn/db";
+import {
+  activityLog,
+  agents,
+  companies,
+  costEvents,
+  heartbeatRuns,
+  issues,
+  projects,
+  goals,
+} from "@soravyn/db";
 import { notFound, unprocessable } from "../errors.js";
 
 export interface CostDateRange {
@@ -10,63 +19,109 @@ export interface CostDateRange {
 
 export function costService(db: Db) {
   return {
-    createEvent: async (companyId: string, data: Omit<typeof costEvents.$inferInsert, "companyId">) => {
-      const agent = await db
-        .select()
-        .from(agents)
-        .where(eq(agents.id, data.agentId))
-        .then((rows) => rows[0] ?? null);
-
-      if (!agent) throw notFound("Agent not found");
-      if (agent.companyId !== companyId) {
-        throw unprocessable("Agent does not belong to company");
-      }
-
-      if(data.issueId){const [task]=await db.select({id:issues.id}).from(issues).where(and(eq(issues.id,data.issueId),eq(issues.companyId,companyId)));if(!task)throw unprocessable("Cost task must belong to this client");}
-      if(data.projectId){const [project]=await db.select({id:projects.id}).from(projects).where(and(eq(projects.id,data.projectId),eq(projects.companyId,companyId)));if(!project)throw unprocessable("Cost project must belong to this client");}
-      if(data.goalId){const [goal]=await db.select({id:goals.id}).from(goals).where(and(eq(goals.id,data.goalId),eq(goals.companyId,companyId)));if(!goal)throw unprocessable("Cost goal must belong to this client");}
-      const event = await db
-        .insert(costEvents)
-        .values({ ...data, companyId })
-        .returning()
-        .then((rows) => rows[0]);
-
-      await db
-        .update(agents)
-        .set({
-          spentMonthlyCents: sql`${agents.spentMonthlyCents} + ${event.costCents}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(agents.id, event.agentId));
-
-      await db
-        .update(companies)
-        .set({
-          spentMonthlyCents: sql`${companies.spentMonthlyCents} + ${event.costCents}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(companies.id, companyId));
-
-      const updatedAgent = await db
-        .select()
-        .from(agents)
-        .where(eq(agents.id, event.agentId))
-        .then((rows) => rows[0] ?? null);
-
-      if (
-        updatedAgent &&
-        updatedAgent.budgetMonthlyCents > 0 &&
-        updatedAgent.spentMonthlyCents >= updatedAgent.budgetMonthlyCents &&
-        updatedAgent.status !== "paused" &&
-        updatedAgent.status !== "terminated"
-      ) {
+    createEvent: async (
+      companyId: string,
+      data: Omit<typeof costEvents.$inferInsert, "companyId">
+    ) => {
+      return db.transaction(async (transaction) => {
+        const db = transaction as unknown as Db;
         await db
-          .update(agents)
-          .set({ status: "paused", updatedAt: new Date() })
-          .where(eq(agents.id, updatedAgent.id));
-      }
+          .select()
+          .from(companies)
+          .where(eq(companies.id, companyId))
+          .for("update");
+        const agent = await db
+          .select()
+          .from(agents)
+          .where(eq(agents.id, data.agentId))
+          .then((rows) => rows[0] ?? null);
 
-      return event;
+        if (!agent) throw notFound("Agent not found");
+        if (agent.companyId !== companyId) {
+          throw unprocessable("Agent does not belong to company");
+        }
+
+        if (data.issueId) {
+          const [task] = await db
+            .select({ id: issues.id })
+            .from(issues)
+            .where(
+              and(eq(issues.id, data.issueId), eq(issues.companyId, companyId))
+            );
+          if (!task)
+            throw unprocessable("Cost task must belong to this client");
+        }
+        if (data.projectId) {
+          const [project] = await db
+            .select({ id: projects.id })
+            .from(projects)
+            .where(
+              and(
+                eq(projects.id, data.projectId),
+                eq(projects.companyId, companyId)
+              )
+            );
+          if (!project)
+            throw unprocessable("Cost project must belong to this client");
+        }
+        if (data.goalId) {
+          const [goal] = await db
+            .select({ id: goals.id })
+            .from(goals)
+            .where(
+              and(eq(goals.id, data.goalId), eq(goals.companyId, companyId))
+            );
+          if (!goal)
+            throw unprocessable("Cost goal must belong to this client");
+        }
+        const event = await db
+          .insert(costEvents)
+          .values({ ...data, companyId })
+          .returning()
+          .then((rows) => rows[0]);
+
+        const now = new Date();
+        if (
+          event.occurredAt.getUTCFullYear() === now.getUTCFullYear() &&
+          event.occurredAt.getUTCMonth() === now.getUTCMonth()
+        ) {
+          await db
+            .update(agents)
+            .set({
+              spentMonthlyCents: sql`${agents.spentMonthlyCents} + ${event.costCents}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(agents.id, event.agentId));
+
+          await db
+            .update(companies)
+            .set({
+              spentMonthlyCents: sql`${companies.spentMonthlyCents} + ${event.costCents}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(companies.id, companyId));
+        }
+        const updatedAgent = await db
+          .select()
+          .from(agents)
+          .where(eq(agents.id, event.agentId))
+          .then((rows) => rows[0] ?? null);
+
+        if (
+          updatedAgent &&
+          updatedAgent.budgetMonthlyCents > 0 &&
+          updatedAgent.spentMonthlyCents >= updatedAgent.budgetMonthlyCents &&
+          updatedAgent.status !== "paused" &&
+          updatedAgent.status !== "terminated"
+        ) {
+          await db
+            .update(agents)
+            .set({ status: "paused", updatedAt: new Date() })
+            .where(eq(agents.id, updatedAgent.id));
+        }
+
+        return event;
+      });
     },
 
     summary: async (companyId: string, range?: CostDateRange) => {
@@ -78,7 +133,9 @@ export function costService(db: Db) {
 
       if (!company) throw notFound("Company not found");
 
-      const conditions: ReturnType<typeof eq>[] = [eq(costEvents.companyId, companyId)];
+      const conditions: ReturnType<typeof eq>[] = [
+        eq(costEvents.companyId, companyId),
+      ];
       if (range?.from) conditions.push(gte(costEvents.occurredAt, range.from));
       if (range?.to) conditions.push(lte(costEvents.occurredAt, range.to));
 
@@ -104,7 +161,9 @@ export function costService(db: Db) {
     },
 
     byAgent: async (companyId: string, range?: CostDateRange) => {
-      const conditions: ReturnType<typeof eq>[] = [eq(costEvents.companyId, companyId)];
+      const conditions: ReturnType<typeof eq>[] = [
+        eq(costEvents.companyId, companyId),
+      ];
       if (range?.from) conditions.push(gte(costEvents.occurredAt, range.from));
       if (range?.to) conditions.push(lte(costEvents.occurredAt, range.to));
 
@@ -123,21 +182,21 @@ export function costService(db: Db) {
         .groupBy(costEvents.agentId, agents.name, agents.status)
         .orderBy(desc(sql`coalesce(sum(${costEvents.costCents}), 0)::int`));
 
-      const runConditions: ReturnType<typeof eq>[] = [eq(heartbeatRuns.companyId, companyId)];
-      if (range?.from) runConditions.push(gte(heartbeatRuns.finishedAt, range.from));
-      if (range?.to) runConditions.push(lte(heartbeatRuns.finishedAt, range.to));
+      const runConditions: ReturnType<typeof eq>[] = [
+        eq(heartbeatRuns.companyId, companyId),
+      ];
+      if (range?.from)
+        runConditions.push(gte(heartbeatRuns.finishedAt, range.from));
+      if (range?.to)
+        runConditions.push(lte(heartbeatRuns.finishedAt, range.to));
 
       const runRows = await db
         .select({
           agentId: heartbeatRuns.agentId,
-          apiRunCount:
-            sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'api' then 1 else 0 end), 0)::int`,
-          subscriptionRunCount:
-            sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then 1 else 0 end), 0)::int`,
-          subscriptionInputTokens:
-            sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then coalesce((${heartbeatRuns.usageJson} ->> 'inputTokens')::int, 0) else 0 end), 0)::int`,
-          subscriptionOutputTokens:
-            sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then coalesce((${heartbeatRuns.usageJson} ->> 'outputTokens')::int, 0) else 0 end), 0)::int`,
+          apiRunCount: sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'api' then 1 else 0 end), 0)::int`,
+          subscriptionRunCount: sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then 1 else 0 end), 0)::int`,
+          subscriptionInputTokens: sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then coalesce((${heartbeatRuns.usageJson} ->> 'inputTokens')::int, 0) else 0 end), 0)::int`,
+          subscriptionOutputTokens: sql<number>`coalesce(sum(case when coalesce((${heartbeatRuns.usageJson} ->> 'billingType'), 'unknown') = 'subscription' then coalesce((${heartbeatRuns.usageJson} ->> 'outputTokens')::int, 0) else 0 end), 0)::int`,
         })
         .from(heartbeatRuns)
         .where(and(...runConditions))
@@ -168,22 +227,29 @@ export function costService(db: Db) {
           issues,
           and(
             eq(activityLog.entityType, "issue"),
-            eq(activityLog.entityId, issueIdAsText),
-          ),
+            eq(activityLog.entityId, issueIdAsText)
+          )
         )
         .where(
           and(
             eq(activityLog.companyId, companyId),
             eq(issues.companyId, companyId),
             isNotNull(activityLog.runId),
-            isNotNull(issues.projectId),
-          ),
+            isNotNull(issues.projectId)
+          )
         )
-        .orderBy(activityLog.runId, issues.projectId, desc(activityLog.createdAt))
+        .orderBy(
+          activityLog.runId,
+          issues.projectId,
+          desc(activityLog.createdAt)
+        )
         .as("run_project_links");
 
-      const conditions: ReturnType<typeof eq>[] = [eq(heartbeatRuns.companyId, companyId)];
-      if (range?.from) conditions.push(gte(heartbeatRuns.finishedAt, range.from));
+      const conditions: ReturnType<typeof eq>[] = [
+        eq(heartbeatRuns.companyId, companyId),
+      ];
+      if (range?.from)
+        conditions.push(gte(heartbeatRuns.finishedAt, range.from));
       if (range?.to) conditions.push(lte(heartbeatRuns.finishedAt, range.to));
 
       const costCentsExpr = sql<number>`coalesce(sum(round(coalesce((${heartbeatRuns.usageJson} ->> 'costUsd')::numeric, 0) * 100)), 0)::int`;

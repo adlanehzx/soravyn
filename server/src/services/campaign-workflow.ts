@@ -1,7 +1,8 @@
+import { creativeQuality } from "./creative-quality.js";
 import { reserveCampaignTask } from "./campaign-budget.js";
 import { sanitizeRecord } from "../redaction.js";
 import { and, asc, eq, inArray, desc } from "drizzle-orm";
-import { agents, approvals, assets, brandProfiles, campaigns, campaignWorkflows, campaignStages, campaignDeliverables, campaignCorrections, campaignSchedule, campaignMeasurements, issues, issueApprovals, activityLog, videoJobs, costEvents, type Db } from "@soravyn/db";
+import { agents, approvals, assets, brandProfiles, campaigns, campaignWorkflows, campaignStages, campaignDeliverables, campaignCorrections, campaignSchedule, campaignMeasurements, heartbeatRuns, issues, issueApprovals, activityLog, videoJobs, costEvents, type Db } from "@soravyn/db";
 import { WORKFLOW_STAGES, campaignStrategySchema, type CampaignWorkflowStage } from "@soravyn/shared";
 import { issueService } from "./issues.js";
 import { videoInput } from "./video-contract.js";
@@ -54,7 +55,7 @@ export function campaignWorkflowService(db:Db){
    const deliverables=await db.select({deliverable:campaignDeliverables,approvalStatus:approvals.status,decisionNote:approvals.decisionNote}).from(campaignDeliverables).innerJoin(approvals,and(eq(campaignDeliverables.approvalId,approvals.id),eq(approvals.companyId,companyId))).where(and(eq(campaignDeliverables.companyId,companyId),eq(campaignDeliverables.campaignId,campaignId))).orderBy(desc(campaignDeliverables.createdAt));
    const correctionRows=await db.select({correction:campaignCorrections,status:issues.status}).from(campaignCorrections).innerJoin(issues,and(eq(campaignCorrections.taskId,issues.id),eq(issues.companyId,companyId))).where(and(eq(campaignCorrections.companyId,companyId),eq(campaignCorrections.campaignId,campaignId)));
    const corrections=correctionRows.map(row=>({...row.correction,status:row.status}));
-   return {workflow,stages:WORKFLOW_STAGES.map(kind=>stages.find(stage=>stage.kind===kind)),deliverables:deliverables.map(row=>({...row.deliverable,approvalStatus:row.approvalStatus,decisionNote:row.decisionNote})),corrections};
+   return {workflow,stages:WORKFLOW_STAGES.map(kind=>stages.find(stage=>stage.kind===kind)),deliverables:deliverables.map(row=>({...row.deliverable,quality:creativeQuality(row.deliverable.content,{brand:workflow.brandSnapshot,brief:workflow.briefSnapshot}),approvalStatus:row.approvalStatus,decisionNote:row.decisionNote})),corrections};
   },
   async authorize(companyId:string,campaignId:string,kind:CampaignWorkflowStage,actor:Actor,maximumCostCents?:number){
    return db.transaction(async transaction=>{const tx=transaction as unknown as Db;const workflow=await lockWorkflow(tx,companyId,campaignId);
@@ -74,11 +75,13 @@ export function campaignWorkflowService(db:Db){
     const [stage]=await tx.select().from(campaignStages).where(and(eq(campaignStages.companyId,companyId),eq(campaignStages.campaignId,campaignId),eq(campaignStages.kind,kind))).for("update");
     if(!stage||!["ready","active","revision_requested"].includes(stage.status))throw conflict("Stage is blocked or already under review");
     if(actor.type==="agent"){
+     const [run]=actor.runId?await tx.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.id,actor.runId),eq(heartbeatRuns.companyId,companyId),eq(heartbeatRuns.agentId,actor.id),eq(heartbeatRuns.status,"running"))):[];
+     if(!run||run.contextSnapshot?.issueId!==stage.taskId)throw forbidden("Deliverable run must be bound to its campaign task");
      const [task]=await tx.select().from(issues).where(and(eq(issues.id,stage.taskId),eq(issues.companyId,companyId)));
      if(stage.status!=="active"||stage.agentId!==actor.id||task?.assigneeAgentId!==actor.id||task.status!=="in_progress"||!actor.runId||task.checkoutRunId!==actor.runId||(task.executionRunId!==null&&task.executionRunId!==actor.runId))throw forbidden("Only the assigned agent after authorization and task checkout can submit");
     }
     const version=stage.version+1;
-    const [approval]=await tx.insert(approvals).values({companyId,type:"campaign_deliverable",payload:{campaignId,stageId:stage.id,kind,version,content:parsed,brandRevisionAt:workflow.brandSnapshot.revisionAt},requestedByUserId:actor.type==="user"?actor.id:null}).returning();
+    const [approval]=await tx.insert(approvals).values({companyId,type:"campaign_deliverable",payload:{campaignId,stageId:stage.id,kind,version,content:parsed,brandRevisionAt:workflow.brandSnapshot.revisionAt,quality:creativeQuality(parsed,{brand:workflow.brandSnapshot,brief:workflow.briefSnapshot})},requestedByUserId:actor.type==="user"?actor.id:null}).returning();
     const [deliverable]=await tx.insert(campaignDeliverables).values({companyId,campaignId,stageId:stage.id,taskId:stage.taskId,version,content:parsed,authorType:actor.type,authorId:actor.id,approvalId:approval.id}).returning();
     await tx.insert(issueApprovals).values({companyId,issueId:stage.taskId,approvalId:approval.id});
     await tx.update(campaignStages).set({status:"in_review",version,updatedAt:new Date()}).where(eq(campaignStages.id,stage.id));
@@ -94,6 +97,8 @@ export function campaignWorkflowService(db:Db){
     if(!stage||stage.status!=="in_review"||stage.version!==approval.payload.version)throw conflict("This approval is not the current deliverable version");
     const [boundDeliverable]=await tx.select().from(campaignDeliverables).where(and(eq(campaignDeliverables.approvalId,approvalId),eq(campaignDeliverables.stageId,stage.id),eq(campaignDeliverables.companyId,approval.companyId),eq(campaignDeliverables.version,stage.version)));
     if(!boundDeliverable)throw conflict("Approval is not bound to the current immutable deliverable");
+    const quality=creativeQuality(boundDeliverable.content,{brand:workflow.brandSnapshot,brief:workflow.briefSnapshot});
+    if(decision==="approved"&&quality.findings.some(f=>f.severity==="error")&&!note?.trim())throw unprocessable("Unfinished content requires correction or an explicit approval explanation");
     if(decision!=="approved"&&!note?.trim())throw unprocessable("A revision comment is required");
     const [updated]=await tx.update(approvals).set({status:decision,decisionNote:note||null,decidedByUserId:userId,decidedAt:new Date(),updatedAt:new Date()}).where(and(eq(approvals.id,approvalId),eq(approvals.status,"pending"))).returning();if(!updated)throw conflict("Approval was already decided");
     await tx.update(issues).set({status:decision==="approved"?"done":"cancelled",completedAt:decision==="approved"?new Date():null,updatedAt:new Date()}).where(eq(issues.id,stage.taskId));

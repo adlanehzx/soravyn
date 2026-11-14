@@ -4,6 +4,7 @@ interface BoardActor {
   type: "board";
   userId: string;
   companyIds?: string[];
+  companyRoles?: Record<string,string>;
   isInstanceAdmin: boolean;
   runId?: string;
   source: "session" | "local_implicit";

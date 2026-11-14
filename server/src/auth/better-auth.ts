@@ -4,7 +4,7 @@ import type { IncomingHttpHeaders } from "node:http";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { Db } from "@soravyn/db";
 import {
   authAccounts,
@@ -171,18 +171,12 @@ async function ensureUserHasCompany(
   }
   if (!company) return;
 
-  // Make user an instance admin (for their own instance in consumer mode)
-  const hasAdminRole = await db
-    .select({ id: instanceUserRoles.id })
-    .from(instanceUserRoles)
-    .where(and(eq(instanceUserRoles.userId, user.id), eq(instanceUserRoles.role, "instance_admin")))
-    .then((rows) => rows[0] ?? null);
-  if (!hasAdminRole) {
-    await db.insert(instanceUserRoles).values({
-      userId: user.id,
-      role: "instance_admin",
-    });
-  }
+  // Only bootstrap the first instance administrator. Later signups own their workspace, not the deployment.
+  await db.transaction(async tx=>{
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('soravyn:first-instance-admin'))`);
+    const [existingAdmin]=await tx.select({id:instanceUserRoles.id}).from(instanceUserRoles).where(eq(instanceUserRoles.role,"instance_admin")).limit(1);
+    if(!existingAdmin)await tx.insert(instanceUserRoles).values({userId:user.id,role:"instance_admin"});
+  });
 
   // Add user as company owner
   await db.insert(companyMemberships).values({
