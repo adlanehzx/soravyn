@@ -1,3 +1,4 @@
+import { reserveCampaignTask } from "./campaign-budget.js";
 import { sanitizeRecord } from "../redaction.js";
 import { and, asc, eq, inArray, desc } from "drizzle-orm";
 import { agents, approvals, assets, brandProfiles, campaigns, campaignWorkflows, campaignStages, campaignDeliverables, campaignCorrections, campaignSchedule, campaignMeasurements, issues, issueApprovals, activityLog, videoJobs, costEvents, type Db } from "@soravyn/db";
@@ -40,7 +41,7 @@ export function campaignWorkflowService(db:Db){
     const [existing]=await tx.select().from(campaignWorkflows).where(eq(campaignWorkflows.campaignId,campaignId));if(existing)throw conflict("Workflow already exists");
     const [brand]=await tx.select().from(brandProfiles).where(eq(brandProfiles.companyId,companyId));if(!brand)throw unprocessable("Configure the brand first");
     for(const id of [team.strategistId,team.creativeId,team.producerId]){const [agent]=await tx.select().from(agents).where(and(eq(agents.id,id),eq(agents.companyId,companyId)));if(!agent||["terminated","pending_approval"].includes(agent.status))throw unprocessable("Every responsible agent must be available in this client");}
-    const [workflow]=await tx.insert(campaignWorkflows).values({companyId,campaignId,brandSnapshot:{id:brand.id,revisionAt:brand.updatedAt.toISOString(),name:brand.name,description:brand.description,industry:brand.industry,audience:brand.audience,tone:brand.tone,languages:brand.languages,colors:brand.colors},briefSnapshot:{name:campaign.name,brief:campaign.brief,objectives:campaign.objectives,audience:campaign.audience,channels:campaign.channels}}).returning();
+    const [workflow]=await tx.insert(campaignWorkflows).values({companyId,campaignId,brandSnapshot:{id:brand.id,revisionAt:brand.updatedAt.toISOString(),name:brand.name,description:brand.description,industry:brand.industry,audience:brand.audience,tone:brand.tone,languages:brand.languages,colors:brand.colors,fontFamily:brand.fontFamily,editorialRules:brand.editorialRules,logoAssetId:brand.logoAssetId,logoLicense:brand.logoLicense},briefSnapshot:{name:campaign.name,brief:campaign.brief,objectives:campaign.objectives,audience:campaign.audience,channels:campaign.channels}}).returning();
     const teamIds=[team.strategistId,team.creativeId,team.producerId];
     for(const [index,kind] of WORKFLOW_STAGES.entries()){const task=await makeTask(tx,workflow,kind,actor,index>0);await tx.insert(campaignStages).values({companyId,campaignId,kind,agentId:teamIds[index],taskId:task.id,status:index===0?"ready":"blocked"});}
     await tx.update(campaigns).set({status:"strategy",producerAgentId:team.producerId,updatedAt:new Date()}).where(eq(campaigns.id,campaignId));
@@ -55,12 +56,13 @@ export function campaignWorkflowService(db:Db){
    const corrections=correctionRows.map(row=>({...row.correction,status:row.status}));
    return {workflow,stages:WORKFLOW_STAGES.map(kind=>stages.find(stage=>stage.kind===kind)),deliverables:deliverables.map(row=>({...row.deliverable,approvalStatus:row.approvalStatus,decisionNote:row.decisionNote})),corrections};
   },
-  async authorize(companyId:string,campaignId:string,kind:CampaignWorkflowStage,actor:Actor){
+  async authorize(companyId:string,campaignId:string,kind:CampaignWorkflowStage,actor:Actor,maximumCostCents?:number){
    return db.transaction(async transaction=>{const tx=transaction as unknown as Db;const workflow=await lockWorkflow(tx,companyId,campaignId);
     const [stage]=await tx.select().from(campaignStages).where(and(eq(campaignStages.companyId,companyId),eq(campaignStages.campaignId,campaignId),eq(campaignStages.kind,kind))).for("update");
     if(!stage||!["ready","revision_requested"].includes(stage.status))throw conflict("Stage is not ready for execution");
     const [agent]=await tx.select().from(agents).where(and(eq(agents.id,stage.agentId),eq(agents.companyId,companyId))).for("update");
     if(!agent||agent.status!=="idle"||agent.budgetMonthlyCents<=0||agent.spentMonthlyCents>=agent.budgetMonthlyCents)throw unprocessable("The responsible agent must be idle with a configured monthly budget and remaining allowance");
+    await reserveCampaignTask(tx,companyId,campaignId,stage.taskId,maximumCostCents);
     await issueService(tx).update(stage.taskId,{assigneeAgentId:stage.agentId,status:"todo"});
     const [updated]=await tx.update(campaignStages).set({status:"active",updatedAt:new Date()}).where(eq(campaignStages.id,stage.id)).returning();
     await audit(tx,companyId,actor,"campaign.stage_authorized",campaignId,{kind,agentId:agent.id,taskId:stage.taskId,monthlyBudgetCents:agent.budgetMonthlyCents});return updated;

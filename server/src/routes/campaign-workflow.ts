@@ -14,7 +14,7 @@ export function campaignWorkflowRoutes(db:Db){
  router.get(base,async(req,res)=>res.json(await svc.get(req.params.companyId as string,req.params.campaignId as string)));
  router.post(base,validate(startCampaignWorkflowSchema),async(req,res)=>{assertBoard(req);res.status(201).json(await svc.start(req.params.companyId as string,req.params.campaignId as string,req.body,actor(req)));});
  router.post(`${base}/:kind/authorize`,validate(authorizeCampaignTaskSchema),async(req,res)=>{
-  assertBoard(req);const stage=await svc.authorize(req.params.companyId as string,req.params.campaignId as string,z.enum(WORKFLOW_STAGES).parse(req.params.kind),actor(req));
+  assertBoard(req);const stage=await svc.authorize(req.params.companyId as string,req.params.campaignId as string,z.enum(WORKFLOW_STAGES).parse(req.params.kind),actor(req),req.body.maximumCostCents);
   try{const run=await heartbeatService(db).wakeup(stage.agentId,{source:"assignment",triggerDetail:"system",reason:"campaign_stage_authorized",payload:{issueId:stage.taskId},requestedByActorType:"user",requestedByActorId:req.actor.userId,contextSnapshot:{issueId:stage.taskId,source:"campaign.workflow.authorize"}});res.json({...stage,wakeRequested:!!run,runId:run?.id||null,...(!run?{warning:"Task authorized; agent wake policy deferred or disabled the execution. Check AI Workforce."}:{})});}
   catch{res.json({...stage,wakeRequested:false,warning:"Task is authorized; the runtime could not be started. Check the agent configuration and retry from AI Workforce."});}
  });
