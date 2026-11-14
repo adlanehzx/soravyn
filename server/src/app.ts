@@ -1,3 +1,6 @@
+import { clientReviewRoutes } from "./routes/client-review.js";
+import { studioExtensionRoutes } from "./routes/studio-extensions.js";
+import { videoCollaborationRoutes } from "./routes/video-collaboration.js";
 import { campaignWorkflowRoutes } from "./routes/campaign-workflow.js";
 import { legacyApiCompatibility } from "./legacy-api-compat.js";
 import type {} from "./types/express.js";
@@ -96,6 +99,8 @@ export async function createApp(
   }
   app.use(llmRoutes(db));
 
+  app.use("/api/client-review", clientReviewRoutes(db));
+
   // Mount API routes
   const api = Router();
   api.use(boardMutationGuard());
@@ -112,9 +117,11 @@ export async function createApp(
   api.use(agentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
   api.use(projectRoutes(db));
-  api.use(videoEnvironmentRoutes());
+  api.use(videoEnvironmentRoutes(db));
+  api.use(videoCollaborationRoutes(db));
   api.use(videoJobRoutes(db));
   api.use(campaignWorkflowRoutes(db));
+  api.use(studioExtensionRoutes(db));
   api.use(studioRoutes(db));
   api.use(issueRoutes(db, opts.storageService));
   api.use(goalRoutes(db));
