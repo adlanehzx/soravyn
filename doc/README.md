@@ -16,6 +16,8 @@
 - [Invariants de développement](SPEC-implementation.md)
 - [Compatibilité des installations existantes](IDENTITY_MIGRATION.md)
 
+- [Extensions : création IA, textes, marque, revue client et budgets](STUDIO_EXTENSIONS.md)
+
 ## Vérification et références
 
 - [Bilan des vérifications du workflow](verification/campaign-workflow-summary.md)

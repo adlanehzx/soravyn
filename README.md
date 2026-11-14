@@ -30,3 +30,5 @@ Licences et attributions : THIRD_PARTY_NOTICES.md et LICENSE.
 ## Workflow de campagne
 
 Campaign Studio relie désormais les tâches des agents, les versions de stratégie/script/storyboard, les validations et les corrections au rendu vidéo. Le planning manuel, les mesures sourcées et le rapport client complètent la livraison. Voir doc/CAMPAIGN_WORKFLOW.md et doc/verification/campaign-workflow-summary.md pour les limites et preuves de vérification.
+
+Les extensions du studio (packs créatifs locaux, textes marketing, marque, déclinaisons, portail client, budgets et audio) sont décrites avec leurs limites dans [doc/STUDIO_EXTENSIONS.md](doc/STUDIO_EXTENSIONS.md).
