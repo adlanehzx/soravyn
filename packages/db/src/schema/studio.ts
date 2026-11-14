@@ -14,6 +14,10 @@ export const brandProfiles = pgTable("brand_profiles", {
   tone: text("tone").notNull().default(""),
   languages: jsonb("languages").$type<string[]>().notNull().default([]),
   colors: jsonb("colors").$type<string[]>().notNull().default([]),
+  fontFamily: text("font_family").notNull().default("sans"),
+  editorialRules: text("editorial_rules").notNull().default(""),
+  logoAssetId: uuid("logo_asset_id"),
+  logoLicense: text("logo_license").notNull().default(""),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => ({ company: uniqueIndex("brand_profiles_company_idx").on(t.companyId) }));
 
