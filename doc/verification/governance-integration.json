@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "companyId": "b1afbefe-412a-41b7-bd6e-c1ca34ab8688",
+  "campaignId": "7c7df29c-bc30-4fd7-9c58-183a16797425",
+  "agentId": "c103c825-29d0-4b78-bb31-cddb064f4175",
+  "taskId": "e7159430-09c7-48ca-bef9-b608fa932ab0",
+  "sourceRunId": "cd88025e-733f-4f23-ace9-c83ccd417402",
+  "recoveryRunId": "1282f907-69f7-4f8d-920a-cefeba5cc4c3",
+  "checks": [
+    "real BetterAuth signup and sessions for four users",
+    "signups do not become instance administrators",
+    "client cannot access agents or another workspace",
+    "manager cannot administer workspace governance",
+    "creative cannot approve copy",
+    "unfinished copy requires explicit override note",
+    "advisory unsupported-claim detection",
+    "missing agent policy blocks execution",
+    "real isolated command with read-only host root and dedicated workspace",
+    "structured checkpoint saved before failure",
+    "human-authorized task recovery receives checkpoint over stdin",
+    "duplicate recovery rejected",
+    "known secret removed from persisted output",
+    "campaign budget guard blocks generic wakeup bypass",
+    "execution permits released"
+  ],
+  "externalPublication": false,
+  "concurrency": {
+    "passed": true,
+    "companyId": "b1afbefe-412a-41b7-bd6e-c1ca34ab8688",
+    "statuses": [
+      "failed",
+      "succeeded"
+    ],
+    "checks": [
+      "two real isolated commands requested concurrently",
+      "company quota admits only one execution",
+      "other execution stops before adapter launch",
+      "all execution permits released"
+    ]
+  }
+}

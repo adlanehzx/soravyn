@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "jobId": "f946143d-2e58-4f87-a89d-77b4bef25b08",
+  "companyId": "f3c6c3ac-98b4-4e15-8f81-5cb704ec3096",
+  "seconds": 6,
+  "codecs": [
+    "h264"
+  ],
+  "checks": [
+    "MP4 produced by final separate video worker",
+    "HTTP download succeeds",
+    "FFprobe validates H264 and duration",
+    "FFmpeg decodes entire MP4 without error",
+    "intermediate files downloadable"
+  ],
+  "externalModel": false
+}
