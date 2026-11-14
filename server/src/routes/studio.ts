@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { agents, brandProfiles, campaigns, campaignWorkflows, campaignStages, campaignDeliverables, videoJobs, approvals, type Db } from "@soravyn/db";
+import { campaignCopy, assets, agents, brandProfiles, campaigns, campaignWorkflows, campaignStages, campaignDeliverables, videoJobs, approvals, type Db } from "@soravyn/db";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import { validate } from "../middleware/validate.js";
 import { issueService } from "../services/issues.js";
@@ -13,6 +13,10 @@ export const brandInput = z.object({
   name: z.string().trim().min(1).max(200), description: short.default(""),
   industry: short.default(""), audience: short.default(""), tone: short.default(""),
   languages: z.array(z.string().trim().min(2).max(40)).max(20).default([]),
+  fontFamily: z.enum(["sans", "serif", "mono"]).default("sans"),
+  editorialRules: z.string().trim().max(5000).default(""),
+  logoAssetId: z.string().uuid().nullable().default(null),
+  logoLicense: z.string().trim().max(1000).default(""),
   colors: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).max(12).default([]),
 }).strict();
 export const campaignInput = z.object({
@@ -32,12 +36,20 @@ export function studioRoutes(db: Db) {
     assertCompanyAccess(req, companyId); assertBoard(req); next();
   });
   const base = "/companies/:companyId/studio";
+  router.get(`${base}/copy-library`,async(req,res)=>{
+    const rows=await db.select({copy:campaignCopy,campaignName:campaigns.name}).from(campaignCopy).innerJoin(campaigns,and(eq(campaignCopy.campaignId,campaigns.id),eq(campaigns.companyId,req.params.companyId as string))).where(eq(campaignCopy.companyId,req.params.companyId as string)).orderBy(desc(campaignCopy.createdAt)).limit(200);
+    res.json(rows.map(row=>({...row.copy,campaignName:row.campaignName})));
+  });
   router.get(`${base}/brand`, async (req, res) => {
     const [brand] = await db.select().from(brandProfiles).where(eq(brandProfiles.companyId, req.params.companyId as string));
     res.json(brand ?? null);
   });
   router.put(`${base}/brand`, validate(brandInput), async (req, res) => {
     const companyId = req.params.companyId as string;
+    if(req.body.logoAssetId){
+      const [asset]=await db.select().from(assets).where(and(eq(assets.id,req.body.logoAssetId),eq(assets.companyId,companyId)));
+      if(!asset||!["image/png","image/jpeg","image/webp"].includes(asset.contentType)||asset.byteSize>10*1024*1024||!req.body.logoLicense)throw unprocessable("Logo must be a client-owned image under 10 MB with ownership information");
+    }
     const [brand] = await db.insert(brandProfiles).values({ ...req.body, companyId }).onConflictDoUpdate({
       target: brandProfiles.companyId, set: { ...req.body, updatedAt: new Date() },
     }).returning();

@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import { validate } from "../middleware/validate.js";
 import { conflict, notFound, unprocessable } from "../errors.js";
-import { videoInput, videoRoot } from "../services/video-contract.js";
+import { videoInput, parseVideoJobInput, videoRoot } from "../services/video-contract.js";
 import { logActivity } from "../services/activity-log.js";
 export function videoJobRoutes(db: Db) {
  const router=Router(); const base="/companies/:companyId/video";
@@ -37,14 +37,14 @@ export function videoJobRoutes(db: Db) {
   const [workflow]=await db.select().from(campaignWorkflows).where(and(eq(campaignWorkflows.campaignId,campaignId),eq(campaignWorkflows.companyId,companyId)));
   if(workflow)throw conflict("Render this workflow through its approved storyboard");
   for(const scene of req.body.scenes){if(scene.imageAssetId){const [asset]=await db.select().from(assets).where(and(eq(assets.id,scene.imageAssetId),eq(assets.companyId,companyId)));if(!asset||!["image/png","image/jpeg","image/jpg","image/webp"].includes(asset.contentType)||asset.byteSize>10*1024*1024)throw unprocessable("Image must belong to this client and be PNG/JPEG/WebP under 10 MB");}}
-  const [job]=await db.insert(videoJobs).values({companyId,campaignId,input:{...req.body,brand:{name:brand.name,colors:brand.colors},campaignName:campaign.name},events:[{stage:"queued",at:new Date().toISOString()}]}).returning();
+  const [job]=await db.insert(videoJobs).values({companyId,campaignId,input:{...req.body,brand:{name:brand.name,colors:brand.colors,fontFamily:brand.fontFamily,logoAssetId:brand.logoAssetId,logoLicense:brand.logoLicense},campaignName:campaign.name},events:[{stage:"queued",at:new Date().toISOString()}]}).returning();
   await logActivity(db,{companyId,...getActorInfo(req),action:"video.queued",entityType:"video_job",entityId:job.id});res.status(201).json(job);
  });
  router.post(`${base}/jobs/:id/revisions`,validate(z.object({sceneIndex:z.number().int().min(0).max(11),title:z.string().trim().min(1).max(90),text:z.string().trim().min(1).max(260),note:z.string().trim().min(1).max(2000)}).strict()),async(req,res)=>{
   const companyId=req.params.companyId as string;const id=z.string().uuid().parse(req.params.id);
   const [parent]=await db.select().from(videoJobs).where(and(eq(videoJobs.id,id),eq(videoJobs.companyId,companyId)));
   if(!parent||parent.status!=="succeeded")throw notFound("A completed source video is required");
-  const parsed=videoInput.parse({platform:parent.input.platform,scenes:parent.input.scenes,narration:parent.input.narration});
+  const parsed=parseVideoJobInput(parent.input);
   if(!parsed.scenes[req.body.sceneIndex])throw unprocessable("Scene does not exist");
   const scenes=parsed.scenes.map((scene,index)=>index===req.body.sceneIndex?{...scene,speech:scene.speech||scene.text,title:req.body.title,text:req.body.text}:scene);
   const job=await db.transaction(async tx=>{
@@ -79,7 +79,7 @@ export function videoJobRoutes(db: Db) {
   const companyId=req.params.companyId as string;const id=z.string().uuid().parse(req.params.id);
   const file=z.enum(["output.mp4","brief.json","storyboard.json","report.json","index.html","captions.srt","narration.wav","assets.manifest.json"]).parse(req.params.file);
   const [job]=await db.select().from(videoJobs).where(and(eq(videoJobs.id,id),eq(videoJobs.companyId,companyId)));
-  if(!job || job.status!=="succeeded")throw notFound("Artifact not available");
+  if(!job || (job.status!=="succeeded" && !(job.status==="audio_ready" && file==="narration.wav")))throw notFound("Artifact not available");
   // HTML is downloaded, never executed within the authenticated application origin.
   res.setHeader("X-Content-Type-Options","nosniff");res.setHeader("Content-Security-Policy","sandbox; default-src 'none'");
   res.download(join(videoRoot(),companyId,id,file),file,{dotfiles:"allow"});
