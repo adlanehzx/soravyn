@@ -37,3 +37,4 @@ export { videoJobs } from "./video.js";
 export { campaignWorkflows, campaignStages, campaignDeliverables, campaignCorrections } from "./campaign_workflow.js";
 export { campaignSchedule, campaignMeasurements } from "./campaign_workflow.js";
 export { campaignCopy, videoNotes, clientReviewLinks, campaignBudgets, campaignReservations } from "./studio_extensions.js";
+export { productionSteps } from "./production_steps.js";

@@ -1,3 +1,4 @@
+import type { StepRunner } from "./production-steps.js";
 import { z } from "zod";
 import { campaignStrategySchema } from "@soravyn/shared";
 import { localScriptConfig } from "./video-script.js";
@@ -28,15 +29,25 @@ export async function generateLocalJson<T>(schema: z.ZodType<T>, instruction: st
   const envelope = JSON.parse(Buffer.concat(chunks).toString("utf8"));
   return schema.parse(JSON.parse(z.string().max(200000).parse(envelope.response)));
 }
-export async function generateCampaignPack(context: Record<string, unknown>, platform: string, event: (stage: string) => Promise<void>, fetcher: typeof fetch = fetch) {
+export async function generateCampaignPack(context: Record<string, unknown>, platform: string, event: (stage: string) => Promise<void>, fetcher: typeof fetch = fetch, runner?: StepRunner) {
+  const provider = localScriptConfig();
+  const expectedPlatform=z.enum(["tiktok","reels","shorts","youtube","square"]).parse(platform);
+  const run: StepRunner = runner || (async (_stage, _input, schema, produce) => schema.parse(await produce()));
+  const version = "campaign-pack-v2";
   await event("strategy_generation");
-  const strategy = await generateLocalJson(campaignStrategySchema, 'Return {"summary":string (10+ characters),"positioning":string,"keyMessages":string[],"channels":string[]}.', context, fetcher);
+  const strategy = await run("strategy", {version,context,platform,model:provider.model,endpoint:provider.endpoint.origin}, campaignStrategySchema,
+    () => generateLocalJson(campaignStrategySchema, 'Return {"summary":string (10+ characters),"positioning":string,"keyMessages":string[],"channels":string[]}.', context, fetcher));
   await event("script_generation");
-  const spec = 'Return {"platform":"' + platform + '","narration":"none","scenes":[{"title":string <=90 chars,"text":string <=260 chars,"duration":integer 2..15}]}. Use 2..6 scenes, total <=90 seconds. No media IDs.';
-  const script = await generateLocalJson(videoInput, spec, {...context, strategy}, fetcher);
+  const spec = 'Return {"platform":"' + platform + '","narration":"none","scenes":[{"title":string <=90 chars,"text":string <=260 chars,"duration":integer 2..15}]}. Use 2..6 scenes, total 5..90 seconds. No media IDs.';
+  const scriptContext = {...context, strategy};
+  const script = await run("script", {version,context:scriptContext,platform,model:provider.model,endpoint:provider.endpoint.origin}, videoInput,
+    async () => ({...await generateLocalJson(videoInput,spec,scriptContext,fetcher),platform:expectedPlatform}));
   await event("storyboard_generation");
-  const storyboard = await generateLocalJson(videoInput, "Adapt this script into concise visual scenes. " + spec, {...context, strategy, script}, fetcher);
+  const storyboardContext = {...context, strategy, script};
+  const storyboard = await run("storyboard", {version,context:storyboardContext,platform,model:provider.model,endpoint:provider.endpoint.origin}, videoInput,
+    async () => ({...await generateLocalJson(videoInput,"Adapt this script into concise visual scenes. "+spec,storyboardContext,fetcher),platform:script.platform}));
   await event("marketing_copy_generation");
-  const copy = await generateLocalJson(copyPack, 'Return {"items":[{"channel":"tiktok"|"instagram"|"linkedin"|"email"|"advertisement"|"website","title":string <=200 chars,"body":string <=10000 chars}]}. Write three distinct publication drafts with a clear call to action.', {...context, strategy, script}, fetcher);
-  return {strategy, script: {...script, platform}, storyboard: {...storyboard, platform}, copy: copy.items};
+  const copy = await run("copy", {version,context:storyboardContext,model:provider.model,endpoint:provider.endpoint.origin}, copyPack,
+    () => generateLocalJson(copyPack, 'Return {"items":[{"channel":"tiktok"|"instagram"|"linkedin"|"email"|"advertisement"|"website","title":string <=200 chars,"body":string <=10000 chars}]}. Write three distinct publication drafts with a clear call to action.', storyboardContext, fetcher));
+  return {strategy, script, storyboard, copy: copy.items};
 }
