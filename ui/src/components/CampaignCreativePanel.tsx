@@ -1,3 +1,4 @@
+import { ProductionStepTimeline } from "./ProductionStepTimeline";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -26,7 +27,7 @@ export function CampaignCreativePanel({companyId,campaignId}:{companyId:string;c
  <Button disabled={!provider.data?.configured||generate.isPending} onClick={()=>generate.mutate()}>Générer stratégie, script, storyboard et publications</Button>
  {!provider.data?.configured&&<p className="text-sm text-muted-foreground">Un modèle Ollama local doit être configuré sur le serveur et le worker.</p>}
  {packs.isLoading&&<p role="status">Chargement des productions…</p>}
- {packs.data?.map(job=><div key={job.id} className="space-y-3 border-t border-border pt-3"><p className="text-sm">Pack {job.id.slice(0,8)} · {job.status} · {job.events.at(-1)?.stage}</p>{job.error&&<p role="alert">{job.error}</p>}{job.input.pack&&<>
+ {packs.data?.map(job=><div key={job.id} className="space-y-3 border-t border-border pt-3"><p className="text-sm">Pack {job.id.slice(0,8)} · {job.status} · {job.events.at(-1)?.stage}</p>{job.error&&<p role="alert">{job.error}</p>}<ProductionStepTimeline companyId={companyId} campaignId={campaignId} jobId={job.id} status={job.status} creativePack/>{job.input.pack&&<>
  {(["strategy","script","storyboard"] as const).map(kind=><details key={kind}><summary className="cursor-pointer text-sm">{kind}</summary><DraftPreview content={job.input.pack![kind]}/><Button variant="outline" disabled={submit.isPending} onClick={()=>submit.mutate({kind,content:job.input.pack![kind]})}>Soumettre ce brouillon au workflow</Button></details>)}
  {job.input.pack.copy.map((item,i)=><div key={i} className="space-y-2"><strong className="text-sm">{item.channel} · {item.title}</strong><p className="whitespace-pre-wrap text-sm">{item.body}</p><Button variant="outline" disabled={importCopy.isPending} onClick={()=>importCopy.mutate({jobId:job.id,item})}>Enregistrer ce texte à relire</Button></div>)}
  </>}</div>)}
