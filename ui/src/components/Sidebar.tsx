@@ -9,6 +9,7 @@ import {
   SquarePen,
   Network,
   Settings,
+  ShieldCheck,
   Key,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +103,7 @@ export function Sidebar({ consumerMode = false }: SidebarProps) {
         <SidebarSection label="Work">
           <SidebarNavItem to="/library" label="Content Library" icon={History} />
           <SidebarNavItem to="/campaigns" label="Campaign Studio" icon={Target} />
+          {(!selectedCompany?.accessRole||selectedCompany.accessRole==="admin")&&<SidebarNavItem to="/governance" label="Gouvernance" icon={ShieldCheck} />}
           <SidebarNavItem to="/video" label="Video Studio" icon={LayoutDashboard} />
           <SidebarNavItem to="/issues" label="Issues" icon={CircleDot} />
           {!consumerMode && (
@@ -121,10 +123,10 @@ export function Sidebar({ consumerMode = false }: SidebarProps) {
               <SidebarNavItem to="/activity" label="Activity" icon={History} />
             </>
           )}
-          {consumerMode && (
+          {consumerMode && (!selectedCompany?.accessRole||selectedCompany.accessRole==="admin") && (
             <SidebarNavItem to="/company/settings" label="API Keys" icon={Key} />
           )}
-          <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
+          {(!selectedCompany?.accessRole||selectedCompany.accessRole==="admin")&&<SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />}
         </SidebarSection>
       </nav>
     </aside>

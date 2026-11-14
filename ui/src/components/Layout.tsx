@@ -1,3 +1,4 @@
+import { ClientDeliveries } from "../pages/ClientDeliveries";
 import { useCallback, useEffect, useRef, useState, type UIEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Moon, Sun } from "lucide-react";
@@ -30,7 +31,7 @@ export function Layout() {
   const { sidebarOpen, setSidebarOpen, toggleSidebar, isMobile } = useSidebar();
   const { openNewIssue, openOnboarding } = useDialog();
   const { togglePanelVisible } = usePanel();
-  const { companies, loading: companiesLoading, selectedCompanyId, setSelectedCompanyId } = useCompany();
+  const { companies, loading: companiesLoading, selectedCompanyId, selectedCompany, setSelectedCompanyId } = useCompany();
   const { theme, toggleTheme } = useTheme();
   const { companyPrefix } = useParams<{ companyPrefix: string }>();
   const navigate = useNavigate();
@@ -184,6 +185,7 @@ export function Layout() {
     [isMobile],
   );
 
+  if(selectedCompanyId&&selectedCompany?.accessRole==="client")return <ClientDeliveries key={selectedCompanyId} companyId={selectedCompanyId}/>;
   return (
     <div className="flex h-dvh bg-background text-foreground overflow-hidden pt-[env(safe-area-inset-top)]">
       <a

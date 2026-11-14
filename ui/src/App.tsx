@@ -1,3 +1,4 @@
+import { Governance } from "./pages/Governance";
 import { ClientReview } from "./pages/ClientReview";
 import { ContentLibrary } from "./pages/ContentLibrary";
 import { CampaignStudio } from "./pages/CampaignStudio";
@@ -101,6 +102,7 @@ function boardRoutes() {
       <Route path="video" element={<VideoStudio />} />
       <Route path="library" element={<ContentLibrary />} />
       <Route path="campaigns" element={<CampaignStudio />} />
+      <Route path="governance" element={<Governance />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />
       <Route path="org" element={<OrgChart />} />
@@ -229,6 +231,7 @@ export function App() {
           <Route path="agents/:agentId/:tab" element={<UnprefixedBoardRedirect />} />
           <Route path="agents/:agentId/runs/:runId" element={<UnprefixedBoardRedirect />} />
           <Route path="campaigns" element={<UnprefixedBoardRedirect />} />
+          <Route path="governance" element={<UnprefixedBoardRedirect />} />
           <Route path="video" element={<UnprefixedBoardRedirect />} />
           <Route path="library" element={<UnprefixedBoardRedirect />} />
           <Route path="projects" element={<UnprefixedBoardRedirect />} />

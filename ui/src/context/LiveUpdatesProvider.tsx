@@ -504,7 +504,8 @@ function handleLiveEvent(
 }
 
 export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
-  const { selectedCompanyId } = useCompany();
+  const { selectedCompanyId, selectedCompany } = useCompany();
+  const workspaceRole=selectedCompany?.accessRole;
   const queryClient = useQueryClient();
   const { pushToast } = useToast();
   const gateRef = useRef<ToastGate>({ cooldownHits: new Map(), suppressUntil: 0 });
@@ -516,7 +517,7 @@ export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
   const currentUserId = session?.user?.id ?? session?.session?.userId ?? null;
 
   useEffect(() => {
-    if (!selectedCompanyId) return;
+    if (!selectedCompanyId||workspaceRole==="client"||workspaceRole==="creative") return;
 
     let closed = false;
     let reconnectAttempt = 0;
@@ -591,7 +592,7 @@ export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
         socket.close(1000, "provider_unmount");
       }
     };
-  }, [queryClient, selectedCompanyId, pushToast, currentUserId]);
+  }, [queryClient, selectedCompanyId, pushToast, currentUserId,workspaceRole]);
 
   return <>{children}</>;
 }
