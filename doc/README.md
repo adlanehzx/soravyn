@@ -3,6 +3,7 @@
 ## Installer et exploiter
 
 - [Développement local](DEVELOPING.md)
+- [Gouvernance, rôles, budgets et reprise des tâches](GOVERNANCE.md)
 - [Base de données](DATABASE.md)
 - [Docker](DOCKER.md)
 - [Authentification et exposition](DEPLOYMENT-MODES.md)

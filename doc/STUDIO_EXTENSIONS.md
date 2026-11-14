@@ -14,7 +14,7 @@
 
 - Un modèle Ollama réel n’a pas été exécuté durant la vérification : le serveur HTTP de modèle est une fixture. Le chemin réel de génération dépend d’un modèle local installé, de ses capacités et des ressources disponibles.
 - Pas de voix premium ni d’alignement automatique mot à mot. Les timings personnalisés sont saisis manuellement. Pas de musique ajoutée par ce lot.
-- Le budget porte sur les autorisations du workflow. Il ne plafonne pas la facture d’un fournisseur et ne bloque pas les exécutions lancées hors de ce workflow. Coûts remontés et réservations s’additionnent jusqu’à libération manuelle : calcul volontairement conservateur, pas un relevé comptable.
+- Le budget vérifie aussi les exécutions génériques d’agents rattachées à une campagne plafonnée. Seule la part non consommée des réservations s’ajoute aux coûts remontés ; une autorisation peut être renouvelée. Il ne plafonne pas directement la facture du fournisseur. Voir GOVERNANCE.md.
 - Le portail est un accès par possession d’un lien privé, pas un compte nominatif avec authentification forte. Il reste soumis à la configuration réseau de l’instance. Toute personne possédant le lien peut donner un avis ; révoquer le lien en cas de fuite.
 - Le signal du worker repose sur un fichier du stockage partagé, actualisé toutes les dix secondes et considéré récent pendant trente secondes. C’est un diagnostic d’activité, pas une garantie de rendu ni un ordonnanceur distribué.
 - La liste des packs est limitée aux 100 jobs récents de la campagne, celle des textes de bibliothèque à 200 éléments. Pas de pagination dans ce lot.

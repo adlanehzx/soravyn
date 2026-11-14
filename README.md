@@ -21,7 +21,7 @@ pnpm build
 
 ## État du produit
 
-La coordination des agents provient du socle conservé. Un worker vidéo séparé produit désormais des MP4 HyperFrames depuis des scènes explicites, avec fichiers intermédiaires, validation humaine et livraison de campagne. Un rendu local réel a été vérifié. La voix locale eSpeak, les images client, les révisions de scènes et la bibliothèque sont intégrées. Le connecteur de scripts Ollama exige un modèle local configuré ; aucun modèle réel n’a été testé dans cet environnement. La refonte complète du dashboard reste en cours. Voir doc/VIDEO_WORKER.md pour les commandes et limites.
+La coordination des agents provient du socle conservé. Un worker vidéo séparé produit désormais des MP4 HyperFrames depuis des scènes explicites, avec fichiers intermédiaires, validation humaine et livraison de campagne. Un rendu local réel a été vérifié. La voix locale eSpeak, les images client, les révisions de scènes et la bibliothèque sont intégrées. Le connecteur de scripts Ollama exige un modèle local configuré ; un pack complet a été généré et vérifié avec le modèle local Qwen2.5 1.5B via Ollama, sans fournisseur payant. La gouvernance a été contrôlée dans Chromium à 1280 et 390 px ; la vérification navigateur complète reste partielle. Voir doc/VIDEO_WORKER.md pour les commandes et limites.
 
 Documentation : [guide des documents](doc/README.md). Architecture : [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md).
 
@@ -34,3 +34,5 @@ Campaign Studio relie désormais les tâches des agents, les versions de straté
 Les extensions du studio (packs créatifs locaux, textes marketing, marque, déclinaisons, portail client, budgets et audio) sont décrites avec leurs limites dans [doc/STUDIO_EXTENSIONS.md](doc/STUDIO_EXTENSIONS.md).
 
 Les reprises par étape, les trois compositions vidéo et les aperçus isolés sont documentés dans [doc/PRODUCTION_RELIABILITY.md](doc/PRODUCTION_RELIABILITY.md).
+
+Le contrôle des agents, les rôles, les reprises de tâches, les budgets réconciliés et les sauvegardes sont décrits dans [doc/GOVERNANCE.md](doc/GOVERNANCE.md), avec leurs limites explicites.
