@@ -43,6 +43,7 @@ export const logger = pino({
 }));
 
 export const httpLogger = pinoHttp({
+  redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["x-client-review"]'],
   logger,
   customLogLevel(_req, res, err) {
     if (err || res.statusCode >= 500) return "error";

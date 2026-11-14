@@ -1,0 +1,24 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "../components/ui/button";
+type Review={title:string;scenes:{title:string;text:string;duration:number}[];decision:string|null;decisionNote:string|null;expiresAt:string;notes:{id:string;sceneIndex:number;timeMs:number;body:string}[]};
+export function ClientReview(){
+ const {id}=useParams();const [token]=useState(()=>window.location.hash.slice(1));const [video,setVideo]=useState<string>();const cache=useQueryClient();
+ async function call<T>(suffix:string,body?:unknown):Promise<T>{const response=await fetch(`/api/client-review/${id}${suffix}`,{method:body?"POST":"GET",credentials:"omit",headers:{"x-client-review":token,...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});if(!response.ok)throw new Error("Ce lien est indisponible, expiré, révoqué ou la demande ne peut pas être enregistrée.");return response.json();}
+ const review=useQuery({queryKey:["client-review",id],queryFn:()=>call<Review>(""),retry:false});
+ const [scene,setScene]=useState(0);const [time,setTime]=useState("0");const [body,setBody]=useState("");
+ const refresh=()=>cache.invalidateQueries({queryKey:["client-review",id]});
+ const note=useMutation({mutationFn:()=>call("/notes",{sceneIndex:scene,timeMs:Math.round(Number(time)*1000),body}),onSuccess:()=>{setBody("");return refresh();}});
+ const decision=useMutation({mutationFn:(value:string)=>call("/decision",{decision:value,note:body}),onSuccess:refresh});
+ const load=useMutation({mutationFn:async()=>{const response=await fetch(`/api/client-review/${id}/video`,{credentials:"omit",headers:{"x-client-review":token}});if(!response.ok)throw new Error("Vidéo indisponible");return URL.createObjectURL(await response.blob());},onSuccess:setVideo});
+ useEffect(()=>()=>{if(video)URL.revokeObjectURL(video);},[video]);
+ const error=review.error||note.error||decision.error||load.error;
+ return <main className="mx-auto max-w-3xl space-y-5 p-4 sm:p-8"><p className="text-xs tracking-widest">SORAVYN / VALIDATION CLIENT</p><h1 className="text-2xl font-semibold">{review.data?.title||"Votre création"}</h1>{error&&<p role="alert" className="text-destructive">{error.message}</p>}{review.isLoading&&<p role="status">Chargement…</p>}{review.data&&<>
+ <p className="text-sm text-muted-foreground">Accès limité à cette vidéo, valable jusqu’au {new Date(review.data.expiresAt).toLocaleString()}. Toute personne possédant ce lien peut laisser un avis ; gardez-le privé. Votre accord client est enregistré séparément de la validation interne de livraison.</p>
+ {!video?<Button disabled={load.isPending} onClick={()=>load.mutate()}>{load.isPending?"Chargement de la vidéo…":"Charger la vidéo"}</Button>:<video className="max-h-[65vh] w-full bg-black" controls src={video} onTimeUpdate={e=>{const current=e.currentTarget.currentTime;setTime(current.toFixed(2));let start=0;const found=review.data.scenes.findIndex(s=>{start+=s.duration;return current<start;});if(found>=0)setScene(found);}}/>}
+ <form className="space-y-3" onSubmit={e=>{e.preventDefault();note.mutate();}}><label className="block text-sm">Scène<select className="block w-full rounded border border-border bg-background p-2" value={scene} onChange={e=>{const index=Number(e.target.value);setScene(index);setTime(String(review.data.scenes.slice(0,index).reduce((n,s)=>n+s.duration,0)));}}>{review.data.scenes.map((s,i)=><option key={i} value={i}>{i+1} · {s.title}</option>)}</select></label><label className="block text-sm">Position (secondes)<input className="block w-full rounded border border-border bg-background p-2" type="number" min={0} max={90} step={0.01} required value={time} onChange={e=>setTime(e.target.value)}/></label><label className="block text-sm">Votre commentaire<textarea required maxLength={2000} className="block w-full rounded border border-border bg-background p-2" value={body} onChange={e=>setBody(e.target.value)}/></label><Button type="submit" disabled={note.isPending}>Ajouter le commentaire à cette position</Button></form>
+ {!review.data.decision?<div className="flex flex-wrap gap-3"><Button disabled={!body.trim()||decision.isPending} onClick={()=>decision.mutate("approved")}>Donner mon accord avec ce commentaire</Button><Button variant="outline" disabled={!body.trim()||decision.isPending} onClick={()=>decision.mutate("revision_requested")}>Demander une nouvelle version</Button></div>:<p role="status">Avis enregistré : {review.data.decision} · {review.data.decisionNote}</p>}
+ {review.data.notes.map(n=><p key={n.id} className="rounded border border-border p-3 text-sm">Scène {n.sceneIndex+1} · {(n.timeMs/1000).toFixed(2)} s — {n.body}</p>)}
+ </>}</main>;
+}

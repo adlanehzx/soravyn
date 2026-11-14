@@ -1,3 +1,4 @@
+import { ClientReview } from "./pages/ClientReview";
 import { ContentLibrary } from "./pages/ContentLibrary";
 import { CampaignStudio } from "./pages/CampaignStudio";
 import { VideoStudio } from "./pages/VideoStudio";
@@ -212,6 +213,7 @@ export function App() {
   return (
     <>
       <Routes>
+        <Route path="review/:id" element={<ClientReview />} />
         <Route path="auth" element={<AuthPage />} />
         <Route path="board-claim/:token" element={<BoardClaimPage />} />
         <Route path="invite/:token" element={<InviteLandingPage />} />
