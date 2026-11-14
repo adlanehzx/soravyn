@@ -239,6 +239,13 @@
       "when": 1794618203001,
       "tag": "0033_massive_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794620987423,
+      "tag": "0034_busy_nicolaos",
+      "breakpoints": true
     }
   ]
 }
