@@ -1,3 +1,8 @@
+import {
+  prepareFlowAgent,
+  waitFlowAgentResult,
+  downloadFlowAgent,
+} from "./services/flow-agent-browser.js";
 import { chromium, type Page } from "playwright-core";
 import { and, eq, lt, inArray, sql } from "drizzle-orm";
 import { createDb, flowJobs } from "@soravyn/db";
@@ -188,26 +193,42 @@ async function once() {
     });
     if (await blocked(page, recipe.blockers))
       throw new Error("HUMAN_LOGIN_OR_CHALLENGE");
-    await page.locator(recipe.ready).waitFor({ state: "visible" });
-    if (
-      (await page.locator(recipe.settings).innerText()).trim() !==
-      recipe.settingsText.trim()
-    )
-      throw new Error("SETTINGS_CHANGED");
-    const downloads = page.locator(recipe.download);
-    if (await downloads.count())
-      throw new Error("PROJECT_MUST_HAVE_NO_EXISTING_DOWNLOADS");
-    await page.locator(recipe.prompt).fill(job.prompt);
-    await stage("prompt_prepared");
-    if (await blocked(page, recipe.blockers))
-      throw new Error("HUMAN_LOGIN_OR_CHALLENGE");
-    const price = await page.locator(recipe.price).innerText();
-    const credits = checkedPrice(
-      price,
-      recipe.priceText,
-      recipe.credits,
-      job.maxCredits
-    );
+    const agentMode = recipe.mode === "agent_confirmation";
+    let credits: number;
+    let downloads: ReturnType<Page["locator"]> | undefined;
+    let approve: ReturnType<Page["locator"]> | undefined;
+    if (agentMode) {
+      const prepared = await prepareFlowAgent(
+        page,
+        job.prompt,
+        job.maxCredits,
+        recipe.model
+      );
+      credits = prepared.credits;
+      approve = prepared.approve;
+      await stage("agent_permission_verified");
+    } else {
+      await page.locator(recipe.ready).waitFor({ state: "visible" });
+      if (
+        (await page.locator(recipe.settings).innerText()).trim() !==
+        recipe.settingsText.trim()
+      )
+        throw new Error("SETTINGS_CHANGED");
+      downloads = page.locator(recipe.download);
+      if (await downloads.count())
+        throw new Error("PROJECT_MUST_HAVE_NO_EXISTING_DOWNLOADS");
+      await page.locator(recipe.prompt).fill(job.prompt);
+      await stage("prompt_prepared");
+      if (await blocked(page, recipe.blockers))
+        throw new Error("HUMAN_LOGIN_OR_CHALLENGE");
+      const price = await page.locator(recipe.price).innerText();
+      credits = checkedPrice(
+        price,
+        recipe.priceText,
+        recipe.credits,
+        job.maxCredits
+      );
+    }
     // Persist possible spend BEFORE click. Network errors after this point never cause an automatic resubmission.
     const [armed] = await db
       .update(flowJobs)
@@ -222,30 +243,43 @@ async function once() {
       .returning();
     if (!armed) throw new Error("LEASE_LOST");
     submitted = true;
-    await page
-      .locator(recipe.submit)
-      .click({ timeout: 15000, noWaitAfter: true });
+    if (agentMode) {
+      await approve!.click();
+    } else {
+      await page
+        .locator(recipe.submit)
+        .click({ timeout: 15000, noWaitAfter: true });
+    }
     await stage("waiting_for_download");
     const deadline = Date.now() + 15 * 60_000;
     let ready = false;
     while (!stopping && Date.now() < deadline) {
       if (await blocked(page, recipe.blockers))
         throw new Error("HUMAN_LOGIN_OR_CHALLENGE");
-      if ((await downloads.count()) === 1 && (await downloads.isVisible())) {
+      if (
+        agentMode
+          ? await waitFlowAgentResult(page)
+          : (await downloads!.count()) === 1 && (await downloads!.isVisible())
+      ) {
         ready = true;
         break;
       }
-      if ((await downloads.count()) > 1) throw new Error("AMBIGUOUS_RESULT");
+      if (!agentMode && (await downloads!.count()) > 1)
+        throw new Error("AMBIGUOUS_RESULT");
       await new Promise((r) => setTimeout(r, 2000));
     }
     if (!ready) throw new Error("RESULT_NOT_READY");
     const folder = join(root, "jobs", job.id);
     await mkdir(folder, { recursive: true, mode: 0o700 });
     const partial = join(folder, "download.partial");
-    const [download] = await Promise.all([
-      page.waitForEvent("download", { timeout: 60000 }),
-      downloads.click(),
-    ]);
+    const download = agentMode
+      ? await downloadFlowAgent(page)
+      : (
+          await Promise.all([
+            page.waitForEvent("download", { timeout: 60000 }),
+            downloads!.click(),
+          ])
+        )[0];
     await download.saveAs(partial);
     if (await download.failure()) throw new Error("DOWNLOAD_FAILED");
     const size = (await stat(partial)).size;

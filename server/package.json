@@ -29,7 +29,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "video:worker": "tsx src/video-worker.ts",
-    "flow:worker": "tsx src/flow-worker.ts"
+    "flow:worker": "tsx src/flow-worker.ts",
+    "flow:import": "tsx src/flow-import.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",

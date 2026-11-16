@@ -4,6 +4,7 @@ import {
   flowRecipe,
   flowUrl,
   checkedPrice,
+  approvalCredits,
   flowDirectory,
 } from "../services/flow-contract.js";
 describe("Flow authorization boundaries", () => {
@@ -46,5 +47,23 @@ describe("Flow authorization boundaries", () => {
       flowRecipe.safeParse({ projectUrl: "https://flow.google.com/" }).success
     ).toBe(false);
     expect(() => flowDirectory("../../secrets")).toThrow();
+  });
+});
+
+describe("Observed Flow Agent approval", () => {
+  it("accepts only one video inside the authorized amount", () => {
+    expect(
+      approvalCredits(
+        "Voulez-vous que je lance la génération de 1\u00a0vidéo, qui coûtera 10\u00a0crédits ?",
+        10
+      )
+    ).toBe(10);
+    for (const message of [
+      "Voulez-vous que je lance la génération de 2 vidéos, qui coûtera 10 crédits ?",
+      "Coût exact : 10 crédits",
+      "Voulez-vous que je lance la génération de 1 vidéo, qui coûtera 20 crédits ?",
+    ]) {
+      expect(() => approvalCredits(message, 10)).toThrow();
+    }
   });
 });

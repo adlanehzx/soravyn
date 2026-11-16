@@ -37,4 +37,4 @@ Les reprises par étape, les trois compositions vidéo et les aperçus isolés s
 
 Le contrôle des agents, les rôles, les reprises de tâches, les budgets réconciliés et les sauvegardes sont décrits dans [doc/GOVERNANCE.md](doc/GOVERNANCE.md), avec leurs limites explicites.
 
-Le [connecteur Google Flow local expérimental](doc/FLOW_CONNECTOR.md) ajoute une file et un worker navigateur. Une connexion Google et une calibration authentifiée sont nécessaires ; aucune génération Flow réelle n’est encore validée.
+Le [connecteur Google Flow local expérimental](doc/FLOW_CONNECTOR.md) ajoute une file et un worker navigateur. Une première génération Flow réelle a été vérifiée et importée. Le parcours complet du worker automatique reste à valider séparément.

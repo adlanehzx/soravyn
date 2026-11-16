@@ -6,7 +6,7 @@ Ce connecteur pilote l'interface web de Flow depuis un worker distinct, avec un 
 
 Implémentés : file PostgreSQL, autorisation humaine de crédits par job, isolation des références client/campagne, suivi des étapes, téléchargement MP4 après vérification, commandes de connexion et de worker, écran dans Video Studio réservé aux administrateurs. Une interruption après armement du clic ne provoque jamais une seconde soumission automatique. Les jobs en attente peuvent être annulés ; une annulation locale n'annule pas une génération déjà soumise à Google.
 
-Non vérifié : aucune génération Google réelle dans ce lot, aucun quota Ultra consommé. Le navigateur disponible redirige vers la page publique de Flow. La calibration authentifiée reste nécessaire ; il n'existe volontairement aucun sélecteur présumé de génération. Les tests locaux prouvent la persistance et l'arrêt avant consommation, pas le fonctionnement de Google. Les clips sont téléchargés dans le panneau Flow ; leur insertion dans la composition HyperFrames, les approbations et le portail client ne sont pas encore intégrées.
+Mise à jour : une génération Google réelle a ensuite été autorisée pour un maximum de 10 crédits et réalisée. Voir le bilan du test réel ci-dessous. La file initiale a été vérifiée sans dépense. La connexion manuelle et l'inspection authentifiée ont ensuite été réalisées ; les sélecteurs de l'adaptateur agent proviennent de cette inspection. Les tests locaux de la file prouvent la persistance et l'arrêt avant consommation ; le test réel Google est une preuve séparée. Les clips sont téléchargés dans le panneau Flow ; leur insertion dans la composition HyperFrames, les approbations et le portail client ne sont pas encore intégrées.
 
 ## Connexion et prérequis
 
@@ -22,7 +22,7 @@ Une seule commande connexion/worker peut posséder ce profil. Le verrou `browser
 
 ## Calibration opérateur
 
-Créer un fichier privé `SORAVYN_VIDEO_ROOT/flow/UUID_DU_CLIENT/recipe.json` après inspection réelle du projet connecté. Ce fichier doit contenir les propriétés suivantes, validées strictement :
+Créer un fichier privé `SORAVYN_VIDEO_ROOT/flow/UUID_DU_CLIENT/recipe.json` après inspection réelle du projet connecté. Pour le mode direct historique, ce fichier doit contenir les propriétés suivantes, validées strictement (le schéma agent est décrit plus bas) :
 
 - `projectUrl` : URL HTTPS Google Flow sans paramètres ni credentials.
 - `ready`, `prompt`, `submit`, `price`, `settings`, `download` : sélecteurs Playwright inspectés dans cette interface.
@@ -58,7 +58,38 @@ puis demande confirmation. Le réglage « Toujours » demander confirmation est 
 Aucune génération vidéo Google n'a été déclenchée à ce stade.
 
 Cette interface nécessite un parcours en plusieurs étapes (proposition, confirmation,
-génération, téléchargement) qui n'est pas encore couvert par la recette directe du
-worker. La calibration reste donc inactive ; le simple succès de connexion ne rend
-pas le connecteur autonome. Le projet et les éléments d'inspection restent dans le
+génération, téléchargement) qui n'est pas couvert par la recette directe historique. Un adaptateur dédié a été
+ajouté ensuite (voir ci-dessous) ; le simple succès de connexion ne valide pas le
+worker autonome. Le projet et les éléments d'inspection restent dans le
 stockage privé local, hors dépôt.
+
+## Test réel autorisé et adaptateur Flow Agent
+
+Un seul clip a été approuvé dans Flow après autorisation explicite de l'utilisateur :
+une vidéo Veo 3.1 Lite pour 10 crédits affichés. Le MP4 original 720p a été téléchargé
+sans upscale : 1280 × 720, 7,93 secondes, H264/AAC, décodage FFmpeg complet réussi.
+Le clip a été importé dans une campagne SORAVYN et son téléchargement HTTP vérifié.
+Le montant effectivement débité n'a pas été réconcilié avec le relevé Google.
+Preuve : `verification/flow-google-real.json`. Aucune deuxième génération n'a été lancée.
+
+L'adaptateur `agent_confirmation` prend maintenant en charge le parcours observé :
+création d'un projet vide, vérification du mode « Toujours » et du modèle par défaut,
+saisie du brief, lecture de la permission native, refus de tout lot de plusieurs vidéos
+ou prix supérieur au maximum, puis approbation ponctuelle et téléchargement original
+720p. Il ne sélectionne jamais « Toujours approuver dans le projet ». Une recette locale
+privée peut contenir `mode`, `projectUrl`, `model`, `reviewedAt`, `blockers` ; le modèle
+calibré est strictement `Veo 3.1 - Lite`. Aucun appel à une API interne Google ni copie
+de cookies n'est utilisé. La recette directe reste disponible pour les autres interfaces.
+
+Les garde-fous de l'adaptateur ont passé des tests avec Chromium réel sur une page HTML
+synthétique hors réseau. Ils sont distincts du test Google, exécuté par contrôle navigateur
+puis import opérateur : **le worker automatique complet n'a pas encore effectué de
+génération Google de bout en bout**. Son activation reste explicite et aucune génération
+supplémentaire n'est autorisée par le test précédent.
+
+Pour récupérer un résultat déjà généré sans répéter une dépense, l'opérateur local peut
+utiliser `pnpm flow:import --company UUID --job UUID --file /chemin/clip.mp4 --observed-credits 10`.
+Le job doit être arrêté, appartenir au client, disposer d'une autorisation suffisante et
+le fichier doit passer FFprobe et un décodage complet FFmpeg. Cette commande importe
+le résultat dans le stockage privé et le rend consultable dans le panneau Flow ; elle ne
+constitue pas une validation éditoriale ni une publication.

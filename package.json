@@ -30,7 +30,8 @@
     "video:worker": "pnpm --filter @soravyn/server video:worker",
     "video:image": "docker build -t soravyn-video:0.6.91 -f docker/video/Dockerfile .",
     "flow:worker": "pnpm --filter @soravyn/server flow:worker",
-    "flow:login": "pnpm --filter @soravyn/server flow:worker --login"
+    "flow:login": "pnpm --filter @soravyn/server flow:worker --login",
+    "flow:import": "pnpm --filter @soravyn/server flow:import"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

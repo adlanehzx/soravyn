@@ -26,8 +26,9 @@ export function flowUrl(value: string) {
   return value;
 }
 // No default selectors: authenticated controls must be inspected and calibrated, never guessed.
-export const flowRecipe = z
+export const directFlowRecipe = z
   .object({
+    mode: z.literal("direct").default("direct"),
     projectUrl: z.string().transform(flowUrl),
     ready: z.string().min(1),
     settings: z.string().min(1),
@@ -52,6 +53,29 @@ export function checkedPrice(
   max: number
 ) {
   if (text.trim() !== expected.trim() || credits > max)
+    throw new Error("PRICE_NOT_AUTHORIZED");
+  return credits;
+}
+
+export const agentFlowRecipe = z
+  .object({
+    mode: z.literal("agent_confirmation"),
+    projectUrl: z.string().transform(flowUrl),
+    model: z.literal("Veo 3.1 - Lite"),
+    reviewedAt: z.string().datetime(),
+    blockers: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+export const flowRecipe = z.union([directFlowRecipe, agentFlowRecipe]);
+export function approvalCredits(text: string, max: number) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const match =
+    /^Voulez-vous que je lance la génération de 1 vidéo, qui coûtera ([0-9]+) crédits ?\?/.exec(
+      normalized
+    );
+  if (!match) throw new Error("UNRECOGNIZED_APPROVAL");
+  const credits = Number(match[1]);
+  if (!Number.isSafeInteger(credits) || credits < 1 || credits > max)
     throw new Error("PRICE_NOT_AUTHORIZED");
   return credits;
 }
