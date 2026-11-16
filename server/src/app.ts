@@ -1,3 +1,4 @@
+import { flowRoutes } from "./routes/flow.js";
 import { operationsRoutes } from "./routes/operations.js";
 import { governanceRoutes } from "./routes/governance.js";
 import { clientDeliveryRoutes } from "./routes/client-deliveries.js";
@@ -119,6 +120,7 @@ export async function createApp(
     }),
   );
   api.use("/companies", companyRoutes(db));
+  api.use(flowRoutes(db));
   api.use(operationsRoutes(db));
   api.use(governanceRoutes(db));
   api.use(clientDeliveryRoutes(db));

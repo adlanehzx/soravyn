@@ -39,3 +39,4 @@ export { campaignSchedule, campaignMeasurements } from "./campaign_workflow.js";
 export { campaignCopy, videoNotes, clientReviewLinks, campaignBudgets, campaignReservations } from "./studio_extensions.js";
 export { productionSteps } from "./production_steps.js";
 export { companyGovernance, agentExecutionPolicies, executionPermits, taskCheckpoints, taskRecoveries } from "./governance.js";
+export { flowJobs } from './flow.js';

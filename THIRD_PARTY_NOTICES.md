@@ -19,3 +19,10 @@ The local verification used Qwen2.5-1.5B-Instruct (Apache-2.0). Model weights
 are downloaded separately and are not distributed in this repository.
 Model card and license: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct
 The license of another model must be checked separately before its use.
+
+## Playwright Core
+
+The optional local Flow browser connector uses playwright-core (Microsoft,
+Apache-2.0): https://github.com/microsoft/playwright/blob/main/LICENSE .
+Chromium is installed separately and retains its own licenses and notices.
+Google Flow is an external service; its name is used to identify the integration.

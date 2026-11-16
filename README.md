@@ -36,3 +36,5 @@ Les extensions du studio (packs créatifs locaux, textes marketing, marque, déc
 Les reprises par étape, les trois compositions vidéo et les aperçus isolés sont documentés dans [doc/PRODUCTION_RELIABILITY.md](doc/PRODUCTION_RELIABILITY.md).
 
 Le contrôle des agents, les rôles, les reprises de tâches, les budgets réconciliés et les sauvegardes sont décrits dans [doc/GOVERNANCE.md](doc/GOVERNANCE.md), avec leurs limites explicites.
+
+Le [connecteur Google Flow local expérimental](doc/FLOW_CONNECTOR.md) ajoute une file et un worker navigateur. Une connexion Google et une calibration authentifiée sont nécessaires ; aucune génération Flow réelle n’est encore validée.

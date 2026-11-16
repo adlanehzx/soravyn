@@ -30,3 +30,5 @@
 - Les licences et attributions restent dans [LICENSE](../LICENSE) et [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 Les skills des agents et du moteur vidéo restent dans `skills/` et `vendor/llm-video-maker/skills/` : ils participent au fonctionnement du produit.
+
+- [Connecteur Google Flow local : installation, calibration et limites](FLOW_CONNECTOR.md)

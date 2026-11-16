@@ -1,3 +1,4 @@
+import { FlowStudio } from "../components/FlowStudio";
 import { VideoProduction } from "./VideoProduction";
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "../context/CompanyContext";
@@ -12,7 +13,7 @@ type Environment = {
 const labels = { node: "Node.js ≥ 22", ffmpeg: "FFmpeg", ffprobe: "Vérification MP4", chromium: "Chromium", sandbox: "Isolation Docker", hyperframes: "HyperFrames 0.6.91", narration: "Narration" } as const;
 
 export function VideoStudio() {
-  const { selectedCompanyId } = useCompany();
+  const { selectedCompanyId, selectedCompany } = useCompany();
   const query = useQuery({
     queryKey: ["video-environment", selectedCompanyId],
     queryFn: () => api.get<Environment>(`/companies/${selectedCompanyId}/video/environment`),
@@ -35,6 +36,7 @@ export function VideoStudio() {
           return <div key={key} className="flex flex-wrap justify-between gap-2 py-3"><dt>{label}</dt><dd className={check.available ? "text-emerald-500" : "text-muted-foreground"}>{check.available ? check.version || "Disponible" : check.reason || "Indisponible"}</dd></div>;
         })}</dl>}
       </section>
+      {selectedCompany?.accessRole === "admin" && <FlowStudio key={"flow-"+selectedCompanyId} companyId={selectedCompanyId} />}
       <VideoProduction key={selectedCompanyId} companyId={selectedCompanyId} />
     </>}
   </main>;

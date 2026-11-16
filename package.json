@@ -28,7 +28,9 @@
     "smoke:openclaw-docker-ui": "./scripts/smoke/openclaw-docker-ui.sh",
     "smoke:openclaw-sse-standalone": "./scripts/smoke/openclaw-sse-standalone.sh",
     "video:worker": "pnpm --filter @soravyn/server video:worker",
-    "video:image": "docker build -t soravyn-video:0.6.91 -f docker/video/Dockerfile ."
+    "video:image": "docker build -t soravyn-video:0.6.91 -f docker/video/Dockerfile .",
+    "flow:worker": "pnpm --filter @soravyn/server flow:worker",
+    "flow:login": "pnpm --filter @soravyn/server flow:worker --login"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
