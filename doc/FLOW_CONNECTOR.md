@@ -14,7 +14,7 @@ L'API doit fonctionner pour le PostgreSQL embarqué. Installer Chromium et FFpro
 
 ```sh
 pnpm flow:login --company UUID_DU_CLIENT
-# Se connecter soi-même dans la fenêtre dédiée puis la fermer.
+# Se connecter soi-même dans la fenêtre Chromium standard dédiée puis la fermer.
 SORAVYN_FLOW_ENABLED=true pnpm flow:worker --company UUID_DU_CLIENT
 ```
 
@@ -47,3 +47,18 @@ SORAVYN_TEST_URL=http://127.0.0.1:3207 node scripts/verification/flow-smoke.mjs
 ```
 
 Le smoke test crée deux clients de vérification et ne lance aucun navigateur Google. Son worker s'arrête sur l'absence de recette ; cette preuve est distincte d'une génération réelle. Voir `doc/verification/flow-connector.json`.
+
+La commande de connexion lance Chromium normalement, sans Playwright ni CDP. Google peut néanmoins refuser ce navigateur ou une automatisation ultérieure. Aucun paramètre de camouflage ou contournement n’est ajouté. Si le refus persiste, arrêter cette voie et utiliser Flow manuellement ou une API officiellement prise en charge.
+
+## Inspection authentifiée du 16 novembre 2026
+
+La connexion manuelle a réussi. L'interface observée est Flow Agent : une proposition
+conversationnelle annonce Veo 3.1 Lite, 8 secondes, 16:9, 720p et 10 crédits,
+puis demande confirmation. Le réglage « Toujours » demander confirmation est activé.
+Aucune génération vidéo Google n'a été déclenchée à ce stade.
+
+Cette interface nécessite un parcours en plusieurs étapes (proposition, confirmation,
+génération, téléchargement) qui n'est pas encore couvert par la recette directe du
+worker. La calibration reste donc inactive ; le simple succès de connexion ne rend
+pas le connecteur autonome. Le projet et les éléments d'inspection restent dans le
+stockage privé local, hors dépôt.

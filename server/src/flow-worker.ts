@@ -12,7 +12,7 @@ import {
 } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { loadConfig } from "./config.js";
 import { resolveEmbeddedIdentity } from "./legacy-database-compat.js";
@@ -326,15 +326,33 @@ async function once() {
 }
 try {
   if (process.argv.includes("--login")) {
-    const context = await browser();
-    const page = await context.newPage();
-    await page.goto("https://flow.google.com/", {
-      waitUntil: "domcontentloaded",
-    });
-    console.log(
-      "Connectez-vous vous-même dans cette fenêtre dédiée. Aucun mot de passe ou cookie n’est exporté. Fermez la fenêtre après connexion."
+    // Authentication is manual in a normal browser, without an automation or CDP session.
+    const child = spawn(
+      process.env.SORAVYN_FLOW_CHROMIUM || "/usr/bin/chromium",
+      [
+        `--user-data-dir=${join(root, "profile")}`,
+        "--new-window",
+        "https://flow.google.com/",
+      ],
+      { stdio: "ignore" }
     );
-    await new Promise<void>((r) => context.on("close", () => r()));
+    closeBrowser = async () => {
+      child.kill("SIGTERM");
+    };
+    console.log(
+      "Connexion manuelle dans Chromium standard. Connectez-vous puis fermez cette fenêtre. Aucun mot de passe ou cookie n’est exporté."
+    );
+    await new Promise<void>((resolve, reject) => {
+      child.once("error", () =>
+        reject(new Error("Cannot launch the configured Chromium browser"))
+      );
+      child.once("exit", (code) =>
+        code === 0 || stopping
+          ? resolve()
+          : reject(new Error("Login browser closed unexpectedly"))
+      );
+    });
+    closeBrowser = undefined;
   } else {
     if (process.env.SORAVYN_FLOW_ENABLED !== "true")
       throw new Error(
