@@ -368,3 +368,15 @@ export type {
   PublishItemInput,
   PublishItemResult,
 } from "./types/distribution.js";
+export {
+  performanceMetricInputSchema,
+  batchMetricsInputSchema,
+  triggerFeedbackLoopInputSchema,
+} from "./validators/marketing-analytics.js";
+export type {
+  PerformanceMetricInput,
+  ContentPerformanceMetric,
+  AnalyticsOverview,
+  StrategicInsight,
+  FeedbackLoopResult,
+} from "./types/marketing-analytics.js";

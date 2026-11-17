@@ -281,6 +281,13 @@
       "when": 1794880207567,
       "tag": "0039_parallel_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794880603262,
+      "tag": "0040_round_lethal_legion",
+      "breakpoints": true
     }
   ]
 }

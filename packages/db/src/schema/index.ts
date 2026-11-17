@@ -44,3 +44,4 @@ export { brandProducts, brandPersonas, brandObjections, brandSources } from "./b
 export { marketingPlans, marketingPlanThemes, marketingPlanProposals } from "./marketing_plan.js";
 export { editorialCalendarItems } from "./editorial_calendar.js";
 export { distributionChannels, distributionLogs } from "./distribution.js";
+export { contentPerformanceMetrics, strategicInsights } from "./marketing_analytics.js";
