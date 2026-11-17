@@ -325,3 +325,21 @@ export type {
   GenerateMarketingPlanInput,
   MarketingPlanSummary,
 } from "./types/marketing-plan.js";
+export {
+  editorialContentTypeSchema,
+  editorialStatusSchema,
+  createEditorialCalendarItemSchema,
+  updateEditorialCalendarItemSchema,
+  generateCalendarFromPlanSchema,
+  editorialCalendarFilterSchema,
+} from "./validators/editorial-calendar.js";
+export type {
+  EditorialContentType,
+  EditorialStatus,
+  EditorialCalendarItem,
+  EditorialCalendarItemInput,
+  EditorialCalendarItemUpdate,
+  GenerateCalendarFromPlanInput,
+  EditorialCalendarFilter,
+  EditorialCalendarStats,
+} from "./types/editorial-calendar.js";

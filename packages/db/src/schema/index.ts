@@ -42,3 +42,4 @@ export { companyGovernance, agentExecutionPolicies, executionPermits, taskCheckp
 export { flowJobs } from './flow.js';
 export { brandProducts, brandPersonas, brandObjections, brandSources } from "./brand_memory.js";
 export { marketingPlans, marketingPlanThemes, marketingPlanProposals } from "./marketing_plan.js";
+export { editorialCalendarItems } from "./editorial_calendar.js";

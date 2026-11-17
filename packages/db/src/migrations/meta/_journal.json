@@ -267,6 +267,13 @@
       "when": 1794877819647,
       "tag": "0037_slippery_infant_terrible",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794878299152,
+      "tag": "0038_early_archangel",
+      "breakpoints": true
     }
   ]
 }
