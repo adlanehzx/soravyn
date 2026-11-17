@@ -16,6 +16,7 @@ import {
   logActivity,
   secretService,
 } from "../services/index.js";
+import { syncVideoJobToCalendar } from "../services/storyboard-generator.js";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import { unprocessable } from "../errors.js";
 import { redactEventPayload } from "../redaction.js";
@@ -206,6 +207,14 @@ export function approvalRoutes(db: Db) {
             error: err instanceof Error ? err.message : String(err),
           },
         });
+      }
+    }
+
+    if (approval.type === "video_review" && (approval.payload as any)?.jobId) {
+      try {
+        await syncVideoJobToCalendar(db, approval.companyId, (approval.payload as any).jobId, "approved");
+      } catch (err) {
+        logger.warn({ err, approvalId: approval.id }, "failed to sync video job approval to editorial calendar");
       }
     }
 

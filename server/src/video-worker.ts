@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { composeVideo, parseVideoJobInput, captionSrt, videoRoot, videoImage } from "./services/video-contract.js";
+import { syncVideoJobToCalendar } from "./services/storyboard-generator.js";
 const execute=promisify(execFile);
 const workerConfig=loadConfig();
 let databasePort=workerConfig.embeddedPostgresPort;
@@ -158,6 +159,7 @@ async function once(){
    }
    await tx.update(videoJobs).set({status:"succeeded",approvalId:approval.id,leaseToken:null,leaseUntil:null,error:null,events:sql`${videoJobs.events} || ${JSON.stringify([{stage:"ready_for_review",at:new Date().toISOString()}])}::jsonb`,updatedAt:new Date()}).where(condition);
   });
+  await syncVideoJobToCalendar(db, job.companyId, job.id, "ready_for_review").catch(()=>{});
   process.stdout.write(`Video job ${job.id}: succeeded\n`);
  }catch(error){
   // Never persist command stderr: third-party tools may include environment details.

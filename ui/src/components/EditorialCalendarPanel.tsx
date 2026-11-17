@@ -5,6 +5,7 @@ import type {
   EditorialContentType,
   EditorialStatus,
   MarketingPlanWithDetails,
+  GeneratedStoryboard,
 } from "@soravyn/shared";
 
 interface Props {
@@ -42,6 +43,15 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Video generation modal
+  const [activeVideoItem, setActiveVideoItem] = useState<EditorialCalendarItem | null>(null);
+  const [videoPlatform, setVideoPlatform] = useState<"tiktok" | "reels" | "shorts" | "youtube" | "square">("tiktok");
+  const [videoTemplate, setVideoTemplate] = useState<"editorial" | "product" | "launch">("editorial");
+  const [videoNarration, setVideoNarration] = useState<"fr" | "en" | "none">("fr");
+  const [previewStoryboard, setPreviewStoryboard] = useState<GeneratedStoryboard | null>(null);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [viewingVideoItem, setViewingVideoItem] = useState<EditorialCalendarItem | null>(null);
 
   // New item form
   const [newItemTitle, setNewItemTitle] = useState("");
@@ -171,6 +181,64 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
     }
   };
 
+  // Preview storyboard
+  const handlePreviewStoryboard = async (item: EditorialCalendarItem) => {
+    try {
+      setGeneratingVideo(true);
+      const res = await fetch(`/api/companies/${companyId}/studio/video/preview-storyboard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calendarItemId: item.id,
+          proposalId: item.proposalId || undefined,
+          platform: videoPlatform,
+          template: videoTemplate,
+          narration: videoNarration,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Erreur de prévisualisation du storyboard");
+      }
+      const data = await res.json();
+      setPreviewStoryboard(data.storyboard);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setGeneratingVideo(false);
+    }
+  };
+
+  // Enqueue video render
+  const handleLaunchVideoRender = async (item: EditorialCalendarItem) => {
+    try {
+      setGeneratingVideo(true);
+      const res = await fetch(`/api/companies/${companyId}/studio/video/generate-from-proposal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calendarItemId: item.id,
+          proposalId: item.proposalId || undefined,
+          platform: videoPlatform,
+          template: videoTemplate,
+          narration: videoNarration,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Erreur de mise en file de production");
+      }
+      setActiveVideoItem(null);
+      setPreviewStoryboard(null);
+      await fetchData();
+      alert("La vidéo a été ajoutée à la file de production avec succès !");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setGeneratingVideo(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -181,11 +249,11 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               <span className="text-xl">📅</span>
               <h2 className="text-xl font-bold text-white tracking-tight">Calendrier Éditorial Omnicanal</h2>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-950 text-purple-300 border border-purple-800">
-                Lot 4 — Validé
+                Lot 4 & 5 — Opérationnels
               </span>
             </div>
             <p className="text-sm text-zinc-400 mt-1">
-              Synchronisation automatique des publications (vidéos, posts réseaux sociaux, emails et articles) issue des plans marketing validés.
+              Synchronisation des publications (vidéos, posts réseaux sociaux, emails et articles) et génération de vidéo par IA connectée.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -321,6 +389,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
             });
             const typeConfig = TYPE_LABELS[item.contentType] || TYPE_LABELS.social_post;
             const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.draft;
+            const hasVideoAsset = !!item.publishedUrl && item.publishedUrl.endsWith(".mp4");
 
             return (
               <div
@@ -363,8 +432,36 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                   </div>
                 </div>
 
-                {/* Right side: Status dropdown & actions */}
-                <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                {/* Right side: Video Actions & Status dropdown */}
+                <div className="flex flex-wrap items-center gap-3 shrink-0 self-end md:self-center">
+                  {/* Video specific action buttons */}
+                  {item.contentType === "video" && (
+                    <>
+                      {hasVideoAsset ? (
+                        <button
+                          onClick={() => setViewingVideoItem(item)}
+                          className="px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                        >
+                          <span>▶️</span> Voir la vidéo
+                        </button>
+                      ) : item.status === "in_production" ? (
+                        <span className="px-3 py-1 bg-amber-950/60 border border-amber-800 text-amber-300 rounded-lg text-xs flex items-center gap-1.5 animate-pulse">
+                          <span>⚙️</span> Rendu en cours...
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setActiveVideoItem(item);
+                            setPreviewStoryboard(null);
+                          }}
+                          className="px-3 py-1.5 bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm"
+                        >
+                          <span>🎬</span> IA Storyboard & Rendu
+                        </button>
+                      )}
+                    </>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500">Statut :</span>
                     <select
@@ -393,6 +490,191 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Video Player Modal */}
+      {viewingVideoItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl w-full space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span>🎬</span> {viewingVideoItem.title}
+              </h3>
+              <button
+                onClick={() => setViewingVideoItem(null)}
+                className="text-zinc-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {viewingVideoItem.publishedUrl && (
+              <video
+                controls
+                autoPlay
+                className="w-full max-h-[420px] rounded-lg bg-black border border-zinc-800"
+                src={viewingVideoItem.publishedUrl}
+              />
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex gap-2">
+                {viewingVideoItem.publishedUrl && (
+                  <a
+                    href={viewingVideoItem.publishedUrl}
+                    download
+                    className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition"
+                  >
+                    Télécharger output.mp4
+                  </a>
+                )}
+              </div>
+              <button
+                onClick={() => setViewingVideoItem(null)}
+                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-medium"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Generation / Storyboard Modal */}
+      {activeVideoItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>✨</span> Générateur de Vidéo & Storyboard IA
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">{activeVideoItem.title}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveVideoItem(null);
+                  setPreviewStoryboard(null);
+                }}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Config inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Format / Plateforme</label>
+                <select
+                  value={videoPlatform}
+                  onChange={(e: any) => setVideoPlatform(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                >
+                  <option value="tiktok">TikTok (9:16 Vertical)</option>
+                  <option value="reels">Reels (9:16 Vertical)</option>
+                  <option value="shorts">Shorts (9:16 Vertical)</option>
+                  <option value="youtube">YouTube (16:9 Paysage)</option>
+                  <option value="square">Carré (1:1 Square)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Template Graphique</label>
+                <select
+                  value={videoTemplate}
+                  onChange={(e: any) => setVideoTemplate(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                >
+                  <option value="editorial">Éditorial (Élégant, Typographie)</option>
+                  <option value="product">Produit (Focus Offre & Mockup)</option>
+                  <option value="launch">Lancement (Impact, Dynamisme)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Narration Vocale</label>
+                <select
+                  value={videoNarration}
+                  onChange={(e: any) => setVideoNarration(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                >
+                  <option value="fr">Français (eSpeak local)</option>
+                  <option value="en">Anglais (eSpeak local)</option>
+                  <option value="none">Sans voix (Visuel seul)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Storyboard Preview Display */}
+            {previewStoryboard ? (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                    Storyboard Généré ({previewStoryboard.totalDuration}s — {previewStoryboard.scenes.length} scènes)
+                  </h4>
+                  <span className="text-[11px] text-zinc-400">
+                    Persona : {previewStoryboard.explanation.targetPersonaName || "Cible standard"}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {previewStoryboard.scenes.map((scene, idx) => (
+                    <div key={idx} className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 font-semibold">
+                        <span>Scène {idx + 1} : {scene.title}</span>
+                        <span className="text-purple-300">{scene.duration}s</span>
+                      </div>
+                      <p className="text-zinc-300">{scene.text}</p>
+                      {scene.speech && (
+                        <p className="text-zinc-500 italic">🎙️ Voix off : "{scene.speech}"</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-zinc-950/60 border border-dashed border-zinc-800 rounded-lg text-center">
+                <p className="text-xs text-zinc-400">
+                  Cliquez sur "Prévisualiser le Storyboard" pour générer la narration et les 4 scènes selon la Mémoire de Marque.
+                </p>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => handlePreviewStoryboard(activeVideoItem)}
+                disabled={generatingVideo}
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition"
+              >
+                {generatingVideo && !previewStoryboard ? "Génération..." : "👁️ Prévisualiser le Storyboard"}
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveVideoItem(null);
+                    setPreviewStoryboard(null);
+                  }}
+                  className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLaunchVideoRender(activeVideoItem)}
+                  disabled={generatingVideo}
+                  className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs font-medium transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>🚀</span> {generatingVideo ? "Lancement..." : "Lancer le Rendu Vidéo"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -450,47 +732,45 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       {/* Create Item Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <form
-            onSubmit={handleCreateItem}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-lg w-full space-y-4"
-          >
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>+</span> Planifier un Nouveau Contenu
+              <span>+</span> Nouveau Contenu au Planning
             </h3>
 
-            <div className="space-y-3">
+            <form onSubmit={handleCreateItem} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Titre de la publication :</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Titre du contenu</label>
                 <input
-                  type="text"
                   required
+                  type="text"
                   value={newItemTitle}
                   onChange={(e) => setNewItemTitle(e.target.value)}
-                  placeholder="ex: Vidéo Teaser — Démonstration du flux d'orchestration"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                  placeholder="Ex: Démo produit 15s TikTok"
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Type de contenu :</label>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Format</label>
                   <select
                     value={newItemType}
-                    onChange={(e) => setNewItemType(e.target.value as EditorialContentType)}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                    onChange={(e: any) => setNewItemType(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
                   >
                     <option value="video">Vidéo</option>
-                    <option value="social_post">Post Réseau Social</option>
+                    <option value="social_post">Post Réseau</option>
                     <option value="email">Email / Newsletter</option>
                     <option value="article">Article / Blog</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Canal de diffusion :</label>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Canal</label>
                   <select
                     value={newItemChannel}
                     onChange={(e) => setNewItemChannel(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
                   >
                     <option value="LinkedIn">LinkedIn</option>
                     <option value="YouTube">YouTube</option>
@@ -503,45 +783,45 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Date et heure de publication :</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Date et heure de publication</label>
                 <input
-                  type="datetime-local"
                   required
+                  type="datetime-local"
                   value={newItemDate}
                   onChange={(e) => setNewItemDate(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Brief & Instructions créatives :</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Brief / Accroche (optionnel)</label>
                 <textarea
                   rows={3}
                   value={newItemBrief}
                   onChange={(e) => setNewItemBrief(e.target.value)}
-                  placeholder="Accroche, message principal, appel à l'action..."
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                  placeholder="Objectif, hook ou consignes spécifiques..."
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
                 />
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs font-medium transition"
-              >
-                {loading ? "Enregistrement..." : "Créer l'élément"}
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-medium transition"
+                >
+                  {loading ? "Création..." : "Ajouter au planning"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

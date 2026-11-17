@@ -343,3 +343,12 @@ export type {
   EditorialCalendarFilter,
   EditorialCalendarStats,
 } from "./types/editorial-calendar.js";
+export {
+  generateStoryboardInputSchema,
+} from "./validators/video-storyboard.js";
+export type {
+  StoryboardScene,
+  StoryboardCaptionCue,
+  GeneratedStoryboard,
+  GenerateStoryboardInput,
+} from "./types/video-storyboard.js";
