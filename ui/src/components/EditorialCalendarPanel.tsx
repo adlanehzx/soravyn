@@ -52,6 +52,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
   const [previewStoryboard, setPreviewStoryboard] = useState<GeneratedStoryboard | null>(null);
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [viewingVideoItem, setViewingVideoItem] = useState<EditorialCalendarItem | null>(null);
+  const [publishingItemId, setPublishingItemId] = useState<string | null>(null);
 
   // New item form
   const [newItemTitle, setNewItemTitle] = useState("");
@@ -236,6 +237,28 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       alert(err.message);
     } finally {
       setGeneratingVideo(false);
+    }
+  };
+
+  const handlePublishItem = async (item: EditorialCalendarItem) => {
+    try {
+      setPublishingItemId(item.id);
+      const res = await fetch(`/api/companies/${companyId}/distribution/calendar/${item.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Erreur lors du dispatch de publication");
+      }
+      const data = await res.json();
+      await fetchData();
+      alert(`Contenu dispatché et publié avec succès !\nLien externe : ${data.result?.externalPostUrl}`);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setPublishingItemId(null);
     }
   };
 
@@ -461,6 +484,29 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                       )}
                     </>
                   )}
+
+                  {/* External publication & dispatch actions */}
+                  {item.status === "published" && item.publishedUrl ? (
+                    <a
+                      href={item.publishedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-blue-950/70 hover:bg-blue-900 text-blue-300 border border-blue-800 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                      title="Consulter le contenu publié"
+                    >
+                      <span>🔗</span> En ligne
+                    </a>
+                  ) : item.status === "approved" ? (
+                    <button
+                      onClick={() => handlePublishItem(item)}
+                      disabled={publishingItemId === item.id}
+                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+                      title="Diffuser vers le canal de publication externe"
+                    >
+                      <span>{publishingItemId === item.id ? "⏳" : "🚀"}</span>
+                      {publishingItemId === item.id ? "Dispatch..." : "Publier"}
+                    </button>
+                  ) : null}
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500">Statut :</span>

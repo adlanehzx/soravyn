@@ -352,3 +352,19 @@ export type {
   GeneratedStoryboard,
   GenerateStoryboardInput,
 } from "./types/video-storyboard.js";
+export {
+  distributionChannelTypeSchema,
+  distributionChannelStatusSchema,
+  createDistributionChannelSchema,
+  updateDistributionChannelSchema,
+  publishItemInputSchema,
+} from "./validators/distribution.js";
+export type {
+  DistributionChannelType,
+  DistributionChannelStatus,
+  DistributionChannel,
+  DistributionLogStatus,
+  DistributionLog,
+  PublishItemInput,
+  PublishItemResult,
+} from "./types/distribution.js";

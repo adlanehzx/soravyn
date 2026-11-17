@@ -15,6 +15,7 @@ import { brandMemoryRoutes } from "./routes/brand-memory.js";
 import { marketingPlanRoutes } from "./routes/marketing-plan.js";
 import { editorialCalendarRoutes } from "./routes/editorial-calendar.js";
 import { videoStoryboardRoutes } from "./routes/video-storyboard.js";
+import { distributionRoutes } from "./routes/distribution.js";
 import { videoEnvironmentRoutes } from "./routes/video-environment.js";
 import express, { Router, type Request as ExpressRequest } from "express";
 import path from "node:path";
@@ -141,6 +142,7 @@ export async function createApp(
   api.use(marketingPlanRoutes(db));
   api.use(editorialCalendarRoutes(db));
   api.use(videoStoryboardRoutes(db));
+  api.use(distributionRoutes(db));
   api.use(issueRoutes(db, opts.storageService));
   api.use(goalRoutes(db));
   api.use(approvalRoutes(db));
