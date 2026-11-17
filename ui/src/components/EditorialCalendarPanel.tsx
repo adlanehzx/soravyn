@@ -32,7 +32,7 @@ const STATUS_CONFIG: Record<EditorialStatus, { label: string; color: string }> =
 export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
   const [items, setItems] = useState<EditorialCalendarItem[]>([]);
   const [stats, setStats] = useState<EditorialCalendarStats | null>(null);
-  const [plans, setPlans] = useState<MarketingPlanWithDetails[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState("2026-11");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [channelFilter, setChannelFilter] = useState<string>("all");
@@ -87,9 +87,10 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       const plansRes = await fetch(`/api/companies/${companyId}/studio/plans?periodMonth=${selectedMonth}`);
       if (plansRes.ok) {
         const plansData = await plansRes.json();
-        setPlans(plansData.plans || []);
-        if (plansData.plans?.length > 0 && !selectedPlanId) {
-          setSelectedPlanId(plansData.plans[0].id);
+        const planList = Array.isArray(plansData) ? plansData : (plansData.plans || []);
+        setPlans(planList);
+        if (planList.length > 0 && !selectedPlanId) {
+          setSelectedPlanId(planList[0].id);
         }
       }
     } catch (err: any) {
@@ -97,6 +98,23 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openGenerateModal = async () => {
+    try {
+      const plansRes = await fetch(`/api/companies/${companyId}/studio/plans?periodMonth=${selectedMonth}`);
+      if (plansRes.ok) {
+        const plansData = await plansRes.json();
+        const planList = Array.isArray(plansData) ? plansData : (plansData.plans || []);
+        setPlans(planList);
+        if (planList.length > 0) {
+          setSelectedPlanId(planList[0].id);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setShowGenerateModal(true);
   };
 
   useEffect(() => {
@@ -281,7 +299,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowGenerateModal(true)}
+              onClick={openGenerateModal}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
             >
               <span>⚡</span> Générer depuis le Plan
@@ -391,7 +409,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
         <div className="text-center py-16 bg-zinc-900/40 border border-dashed border-zinc-800 rounded-xl">
           <p className="text-zinc-400 text-sm">Aucun contenu planifié pour {selectedMonth}.</p>
           <button
-            onClick={() => setShowGenerateModal(true)}
+            onClick={openGenerateModal}
             className="mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition"
           >
             Générer le planning depuis un Plan Marketing
@@ -749,7 +767,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                 >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.title} ({p.periodMonth} — {p.proposals?.length || 0} propositions)
+                      {p.title} ({p.periodMonth} — {p.proposalsCount ?? p.proposals?.length ?? 0} propositions)
                     </option>
                   ))}
                 </select>
