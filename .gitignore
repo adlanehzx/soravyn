@@ -50,3 +50,4 @@ tmp/
 .env.*
 !.env.example
 *.log
+server/ui-dist/

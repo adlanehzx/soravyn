@@ -2,16 +2,27 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { Button } from "./ui/button";
+import {
+  BookOpen,
+  Package,
+  Users,
+  ShieldAlert,
+  FileCheck,
+  CheckSquare,
+  Plus,
+  Trash2,
+  ExternalLink,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import type {
-  BrandProduct,
-  BrandPersona,
-  BrandObjection,
-  BrandSource,
   BrandMemoryContext,
   BriefPreparationResult,
 } from "@soravyn/shared";
 
-const fieldClass = "w-full rounded-md border border-border bg-background p-2 text-sm";
+const fieldClass = "w-full rounded-md border border-border bg-background p-2 text-sm text-foreground";
 
 export function BrandMemoryPanel({ companyId }: { companyId: string }) {
   const cache = useQueryClient();
@@ -182,41 +193,48 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
     <section className="space-y-6 rounded-xl border border-border bg-card p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Mémoire de marque & Connaissances vérifiables</h2>
-          <p className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Mémoire de marque & Connaissances vérifiables</h2>
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+              Connaissances
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
             Produits, tarification, personas, objections et sources de preuve alimentant les briefs des agents.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium">{stats.productCount} produits</span>
-          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium">{stats.personaCount} personas</span>
-          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium">{stats.objectionCount} objections</span>
-          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium">{stats.sourceCount} sources</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium border border-border text-foreground">{stats.productCount} produits</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium border border-border text-foreground">{stats.personaCount} personas</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium border border-border text-foreground">{stats.objectionCount} objections</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 font-medium border border-border text-foreground">{stats.sourceCount} sources</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border pb-2 text-sm font-medium">
+      <div className="flex border-b border-border pb-2 text-sm font-medium overflow-x-auto gap-2">
         {(
           [
-            ["products", "Produits & Tarifs"],
-            ["personas", "Personas Cibles"],
-            ["objections", "Objections & Réponses"],
-            ["sources", "Sources & Preuves"],
-            ["brief", "Évaluateur de Brief & Gaps"],
+            ["products", "Produits & Tarifs", Package],
+            ["personas", "Personas Cibles", Users],
+            ["objections", "Objections & Réponses", ShieldAlert],
+            ["sources", "Sources & Preuves", FileCheck],
+            ["brief", "Évaluateur de Brief & Gaps", CheckSquare],
           ] as const
-        ).map(([tab, label]) => (
+        ).map(([tab, label, Icon]) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`mr-4 border-b-2 pb-2 transition-colors ${
+            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2 transition-colors ${
               activeTab === tab
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {label}
+            <Icon className="h-4 w-4" />
+            <span>{label}</span>
           </button>
         ))}
       </div>
@@ -225,13 +243,13 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
       {activeTab === "products" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <h3 className="text-base font-medium">Offres & Produits ({products.length})</h3>
+            <h3 className="text-base font-medium text-foreground">Offres & Produits ({products.length})</h3>
             {products.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun produit enregistré. Ajoutez vos offres pour ancrer vos briefs.</p>
             ) : (
               <div className="space-y-3">
                 {products.map((p) => (
-                  <div key={p.id} className="rounded-lg border border-border p-4">
+                  <div key={p.id} className="rounded-lg border border-border p-4 bg-background/50">
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-foreground">{p.name}</h4>
@@ -247,7 +265,7 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                     {p.keyFeatures.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {p.keyFeatures.map((f, i) => (
-                          <span key={i} className="text-[11px] bg-secondary px-2 py-0.5 rounded text-secondary-foreground">
+                          <span key={i} className="text-[11px] bg-secondary px-2 py-0.5 rounded text-secondary-foreground border border-border">
                             {f}
                           </span>
                         ))}
@@ -259,8 +277,9 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                         size="sm"
                         onClick={() => deleteProduct.mutate(p.id)}
                         disabled={deleteProduct.isPending}
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:bg-destructive/10 flex items-center gap-1.5 text-xs"
                       >
+                        <Trash2 className="h-3.5 w-3.5" />
                         Supprimer
                       </Button>
                     </div>
@@ -277,30 +296,39 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
             }}
             className="space-y-3 rounded-lg border border-border bg-background/50 p-4"
           >
-            <h3 className="text-base font-medium">Ajouter une offre / produit</h3>
-            <label className="block text-xs">
+            <div className="flex items-center gap-2 text-base font-medium text-foreground">
+              <Plus className="h-4 w-4 text-primary" />
+              <h3>Ajouter une offre / produit</h3>
+            </div>
+            <label className="block text-xs text-muted-foreground">
               Nom du produit
               <input required className={fieldClass} value={prodName} onChange={(e) => setProdName(e.target.value)} />
             </label>
             <div className="grid grid-cols-2 gap-2">
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Catégorie
                 <input className={fieldClass} value={prodCategory} onChange={(e) => setProdCategory(e.target.value)} />
               </label>
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Tarification / Prix (ex: 49€/mois)
                 <input required className={fieldClass} value={prodPricing} onChange={(e) => setProdPricing(e.target.value)} />
               </label>
             </div>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Proposition de valeur unique (USP)
               <input className={fieldClass} value={prodValueProp} onChange={(e) => setProdValueProp(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Fonctionnalités clés (séparées par virgules)
               <input className={fieldClass} value={prodFeatures} onChange={(e) => setProdFeatures(e.target.value)} />
             </label>
-            <Button disabled={createProduct.isPending || !prodName || !prodPricing} type="submit" size="sm">
+            <Button
+              disabled={createProduct.isPending || !prodName || !prodPricing}
+              type="submit"
+              size="sm"
+              className="flex items-center gap-1.5"
+            >
+              {createProduct.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               {createProduct.isPending ? "Ajout en cours…" : "Enregistrer le produit"}
             </Button>
           </form>
@@ -311,13 +339,13 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
       {activeTab === "personas" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <h3 className="text-base font-medium">Personas Cibles ({personas.length})</h3>
+            <h3 className="text-base font-medium text-foreground">Personas Cibles ({personas.length})</h3>
             {personas.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun persona enregistré. Définissez vos profils cibles.</p>
             ) : (
               <div className="space-y-3">
                 {personas.map((pers) => (
-                  <div key={pers.id} className="rounded-lg border border-border p-4">
+                  <div key={pers.id} className="rounded-lg border border-border p-4 bg-background/50">
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-foreground">{pers.name}</h4>
@@ -343,8 +371,9 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                         size="sm"
                         onClick={() => deletePersona.mutate(pers.id)}
                         disabled={deletePersona.isPending}
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:bg-destructive/10 flex items-center gap-1.5 text-xs"
                       >
+                        <Trash2 className="h-3.5 w-3.5" />
                         Supprimer
                       </Button>
                     </div>
@@ -361,28 +390,37 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
             }}
             className="space-y-3 rounded-lg border border-border bg-background/50 p-4"
           >
-            <h3 className="text-base font-medium">Ajouter un persona cible</h3>
-            <label className="block text-xs">
+            <div className="flex items-center gap-2 text-base font-medium text-foreground">
+              <Plus className="h-4 w-4 text-primary" />
+              <h3>Ajouter un persona cible</h3>
+            </div>
+            <label className="block text-xs text-muted-foreground">
               Nom / Identifiant du persona
               <input required className={fieldClass} value={persName} onChange={(e) => setPersName(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Rôle / Titre (ex: Responsable Acquisition)
               <input className={fieldClass} value={persRole} onChange={(e) => setPersRole(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Douleurs / Pain points (séparés par virgules)
               <input className={fieldClass} value={persPainPoints} onChange={(e) => setPersPainPoints(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Objectifs prioritaires (séparés par virgules)
               <input className={fieldClass} value={persGoals} onChange={(e) => setPersGoals(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Canaux préférés (séparés par virgules)
               <input className={fieldClass} value={persChannels} onChange={(e) => setPersChannels(e.target.value)} />
             </label>
-            <Button disabled={createPersona.isPending || !persName} type="submit" size="sm">
+            <Button
+              disabled={createPersona.isPending || !persName}
+              type="submit"
+              size="sm"
+              className="flex items-center gap-1.5"
+            >
+              {createPersona.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               {createPersona.isPending ? "Ajout…" : "Enregistrer le persona"}
             </Button>
           </form>
@@ -393,16 +431,16 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
       {activeTab === "objections" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <h3 className="text-base font-medium">Objections & Réponses Vérifiables ({objections.length})</h3>
+            <h3 className="text-base font-medium text-foreground">Objections & Réponses Vérifiables ({objections.length})</h3>
             {objections.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune objection répertoriée.</p>
             ) : (
               <div className="space-y-3">
                 {objections.map((obj) => (
-                  <div key={obj.id} className="rounded-lg border border-border p-4">
+                  <div key={obj.id} className="rounded-lg border border-border p-4 bg-background/50">
                     <div className="flex items-start justify-between">
                       <h4 className="font-medium text-destructive">« {obj.objection} »</h4>
-                      <span className="text-[11px] bg-secondary px-2 py-0.5 rounded capitalize">{obj.category}</span>
+                      <span className="text-[11px] bg-secondary px-2 py-0.5 rounded capitalize border border-border">{obj.category}</span>
                     </div>
                     <p className="mt-2 text-xs font-medium text-foreground">Réponse recommandée : {obj.recommendedResponse}</p>
                     {obj.verifiableProof && (
@@ -416,8 +454,9 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                         size="sm"
                         onClick={() => deleteObjection.mutate(obj.id)}
                         disabled={deleteObjection.isPending}
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:bg-destructive/10 flex items-center gap-1.5 text-xs"
                       >
+                        <Trash2 className="h-3.5 w-3.5" />
                         Supprimer
                       </Button>
                     </div>
@@ -434,12 +473,15 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
             }}
             className="space-y-3 rounded-lg border border-border bg-background/50 p-4"
           >
-            <h3 className="text-base font-medium">Ajouter une objection</h3>
-            <label className="block text-xs">
+            <div className="flex items-center gap-2 text-base font-medium text-foreground">
+              <Plus className="h-4 w-4 text-primary" />
+              <h3>Ajouter une objection</h3>
+            </div>
+            <label className="block text-xs text-muted-foreground">
               Objection fréquente
               <input required className={fieldClass} value={objText} onChange={(e) => setObjText(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Catégorie
               <select className={fieldClass} value={objCategory} onChange={(e) => setObjCategory(e.target.value as any)}>
                 <option value="pricing">Tarif / Prix</option>
@@ -450,15 +492,15 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                 <option value="other">Autre</option>
               </select>
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Argument de réponse recommandé
               <textarea required rows={2} className={fieldClass} value={objResponse} onChange={(e) => setObjResponse(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Élément de preuve vérifiable (chiffre, étude, benchmark)
               <input className={fieldClass} value={objProof} onChange={(e) => setObjProof(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Produit associé (optionnel)
               <select className={fieldClass} value={objProductId} onChange={(e) => setObjProductId(e.target.value)}>
                 <option value="">Tous les produits</option>
@@ -467,7 +509,13 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                 ))}
               </select>
             </label>
-            <Button disabled={createObjection.isPending || !objText || !objResponse} type="submit" size="sm">
+            <Button
+              disabled={createObjection.isPending || !objText || !objResponse}
+              type="submit"
+              size="sm"
+              className="flex items-center gap-1.5"
+            >
+              {createObjection.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               {createObjection.isPending ? "Ajout…" : "Enregistrer l'objection"}
             </Button>
           </form>
@@ -478,16 +526,16 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
       {activeTab === "sources" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <h3 className="text-base font-medium">Sources & Documents Vérifiables ({sources.length})</h3>
+            <h3 className="text-base font-medium text-foreground">Sources & Documents Vérifiables ({sources.length})</h3>
             {sources.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune source vérifiée enregistrée.</p>
             ) : (
               <div className="space-y-3">
                 {sources.map((src) => (
-                  <div key={src.id} className="rounded-lg border border-border p-4">
+                  <div key={src.id} className="rounded-lg border border-border p-4 bg-background/50">
                     <div className="flex items-start justify-between">
                       <h4 className="font-medium text-foreground">{src.title}</h4>
-                      <span className="text-[11px] bg-secondary px-2 py-0.5 rounded uppercase">{src.kind}</span>
+                      <span className="text-[11px] bg-secondary px-2 py-0.5 rounded uppercase border border-border">{src.kind}</span>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">{src.content}</p>
                     {src.sourceUrl && (
@@ -495,9 +543,10 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                         href={src.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-2 block text-xs text-primary hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
                       >
-                        {src.sourceUrl}
+                        <ExternalLink className="h-3 w-3" />
+                        <span>{src.sourceUrl}</span>
                       </a>
                     )}
                     <div className="mt-3 flex justify-end">
@@ -506,8 +555,9 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                         size="sm"
                         onClick={() => deleteSource.mutate(src.id)}
                         disabled={deleteSource.isPending}
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:bg-destructive/10 flex items-center gap-1.5 text-xs"
                       >
+                        <Trash2 className="h-3.5 w-3.5" />
                         Supprimer
                       </Button>
                     </div>
@@ -524,12 +574,15 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
             }}
             className="space-y-3 rounded-lg border border-border bg-background/50 p-4"
           >
-            <h3 className="text-base font-medium">Ajouter une source documentaire</h3>
-            <label className="block text-xs">
+            <div className="flex items-center gap-2 text-base font-medium text-foreground">
+              <Plus className="h-4 w-4 text-primary" />
+              <h3>Ajouter une source documentaire</h3>
+            </div>
+            <label className="block text-xs text-muted-foreground">
               Titre du document / de l'étude
               <input required className={fieldClass} value={srcTitle} onChange={(e) => setSrcTitle(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Type de document
               <select className={fieldClass} value={srcKind} onChange={(e) => setSrcKind(e.target.value as any)}>
                 <option value="document">Document officiel</option>
@@ -540,19 +593,25 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                 <option value="proof">Preuve / Donnée vérifiée</option>
               </select>
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Contenu vérifiable (données, chiffres clés, citations)
               <textarea required rows={4} className={fieldClass} value={srcContent} onChange={(e) => setSrcContent(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Lien / URL source
               <input className={fieldClass} value={srcUrl} onChange={(e) => setSrcUrl(e.target.value)} />
             </label>
-            <label className="block text-xs">
+            <label className="block text-xs text-muted-foreground">
               Tags (séparés par virgules)
               <input className={fieldClass} value={srcTags} onChange={(e) => setSrcTags(e.target.value)} />
             </label>
-            <Button disabled={createSource.isPending || !srcTitle || !srcContent} type="submit" size="sm">
+            <Button
+              disabled={createSource.isPending || !srcTitle || !srcContent}
+              type="submit"
+              size="sm"
+              className="flex items-center gap-1.5"
+            >
+              {createSource.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               {createSource.isPending ? "Ajout…" : "Enregistrer la source"}
             </Button>
           </form>
@@ -570,28 +629,31 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
               }}
               className="space-y-4 rounded-lg border border-border bg-background/50 p-4"
             >
-              <h3 className="text-base font-medium">Évaluer un brief & Détecter les manques</h3>
+              <div className="flex items-center gap-2 text-base font-medium text-foreground">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                <h3>Évaluer un brief & Détecter les manques</h3>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Vérifie la conformité avec la mémoire de marque : prix, personas, objections et sources de preuves.
               </p>
 
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Nom de la campagne
                 <input required className={fieldClass} value={briefName} onChange={(e) => setBriefName(e.target.value)} />
               </label>
 
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Objectifs commerciaux
                 <textarea required rows={2} className={fieldClass} value={briefObjectives} onChange={(e) => setBriefObjectives(e.target.value)} />
               </label>
 
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Contenu du brief
                 <textarea required rows={5} className={fieldClass} value={briefContent} onChange={(e) => setBriefContent(e.target.value)} />
               </label>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="block text-xs">
+                <label className="block text-xs text-muted-foreground">
                   Produit cible
                   <select className={fieldClass} value={briefProductId} onChange={(e) => setBriefProductId(e.target.value)}>
                     <option value="">Détection automatique</option>
@@ -600,7 +662,7 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                     ))}
                   </select>
                 </label>
-                <label className="block text-xs">
+                <label className="block text-xs text-muted-foreground">
                   Persona cible
                   <select className={fieldClass} value={briefPersonaId} onChange={(e) => setBriefPersonaId(e.target.value)}>
                     <option value="">Détection automatique</option>
@@ -611,18 +673,24 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                 </label>
               </div>
 
-              <label className="block text-xs">
+              <label className="block text-xs text-muted-foreground">
                 Canaux sélectionnés (séparés par virgules)
                 <input className={fieldClass} value={briefChannels} onChange={(e) => setBriefChannels(e.target.value)} />
               </label>
 
-              <Button disabled={evaluateBrief.isPending || !briefName || !briefContent} type="submit" size="sm">
+              <Button
+                disabled={evaluateBrief.isPending || !briefName || !briefContent}
+                type="submit"
+                size="sm"
+                className="flex items-center gap-1.5"
+              >
+                {evaluateBrief.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckSquare className="h-3.5 w-3.5" />}
                 {evaluateBrief.isPending ? "Analyse en cours…" : "Analyser le brief & Détecter les manques"}
               </Button>
             </form>
 
             <div className="space-y-4">
-              <h3 className="text-base font-medium">Résultat d'évaluation & Gaps identifiés</h3>
+              <h3 className="text-base font-medium text-foreground">Résultat d'évaluation & Gaps identifiés</h3>
               {!evaluationResult ? (
                 <div className="rounded-lg border border-border border-dashed p-8 text-center text-sm text-muted-foreground">
                   Soumettez un brief pour visualiser les informations de marque appariées et les manques à combler.
@@ -640,7 +708,12 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold uppercase tracking-wider text-xs">
+                      <span className="font-semibold uppercase tracking-wider text-xs flex items-center gap-1.5">
+                        {evaluationResult.status === "complete" ? (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <AlertCircle className="h-3.5 w-3.5" />
+                        )}
                         Statut : {evaluationResult.status === "complete" ? "Brief complet" : evaluationResult.status === "action_required" ? "Action recommandée" : "Incomplet (bloquant)"}
                       </span>
                       <span className="text-xs">
@@ -665,7 +738,10 @@ export function BrandMemoryPanel({ companyId }: { companyId: string }) {
                           }`}
                         >
                           <div className="font-semibold">{item.message}</div>
-                          <div className="mt-1 text-muted-foreground">→ Recommandation : {item.recommendation}</div>
+                          <div className="mt-1 text-muted-foreground flex items-center gap-1">
+                            <ArrowRight className="h-3 w-3 shrink-0" />
+                            <span>Recommandation : {item.recommendation}</span>
+                          </div>
                         </div>
                       ))}
                     </div>

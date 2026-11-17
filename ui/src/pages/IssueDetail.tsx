@@ -468,7 +468,7 @@ export function IssueDetail() {
     const titleLabel = issue?.title ?? issueId ?? "Issue";
     setBreadcrumbs([
       { label: "Issues", href: "/issues" },
-      { label: hasLiveRuns ? `🔵 ${titleLabel}` : titleLabel },
+      { label: titleLabel },
     ]);
   }, [setBreadcrumbs, issue, issueId, hasLiveRuns]);
 

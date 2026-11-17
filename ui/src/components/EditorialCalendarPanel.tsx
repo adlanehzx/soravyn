@@ -4,29 +4,68 @@ import type {
   EditorialCalendarStats,
   EditorialContentType,
   EditorialStatus,
-  MarketingPlanWithDetails,
   GeneratedStoryboard,
 } from "@soravyn/shared";
+import {
+  Calendar,
+  Zap,
+  Plus,
+  Play,
+  Loader2,
+  Film,
+  Share2,
+  Mail,
+  FileText,
+  ExternalLink,
+  Send,
+  Trash2,
+  X,
+  Sparkles,
+  Mic,
+  Eye,
+  RefreshCw,
+  Download,
+} from "lucide-react";
+import { Button } from "./ui/button";
 
 interface Props {
   companyId: string;
 }
 
-const TYPE_LABELS: Record<EditorialContentType, { label: string; icon: string; color: string }> = {
-  video: { label: "Vidéo", icon: "🎬", color: "bg-purple-950/60 text-purple-300 border-purple-800" },
-  social_post: { label: "Post Réseau", icon: "📱", color: "bg-blue-950/60 text-blue-300 border-blue-800" },
-  email: { label: "Email / News", icon: "✉️", color: "bg-amber-950/60 text-amber-300 border-amber-800" },
-  article: { label: "Article / Blog", icon: "📄", color: "bg-emerald-950/60 text-emerald-300 border-emerald-800" },
+const TYPE_CONFIG: Record<
+  EditorialContentType,
+  { label: string; Icon: React.ComponentType<{ className?: string }>; color: string }
+> = {
+  video: {
+    label: "Vidéo",
+    Icon: Film,
+    color: "bg-purple-950/60 text-purple-300 border-purple-800",
+  },
+  social_post: {
+    label: "Post Réseau",
+    Icon: Share2,
+    color: "bg-blue-950/60 text-blue-300 border-blue-800",
+  },
+  email: {
+    label: "Email / News",
+    Icon: Mail,
+    color: "bg-amber-950/60 text-amber-300 border-amber-800",
+  },
+  article: {
+    label: "Article / Blog",
+    Icon: FileText,
+    color: "bg-emerald-950/60 text-emerald-300 border-emerald-800",
+  },
 };
 
 const STATUS_CONFIG: Record<EditorialStatus, { label: string; color: string }> = {
-  draft: { label: "Brouillon", color: "bg-zinc-800 text-zinc-300 border-zinc-700" },
-  scheduled: { label: "Programmé", color: "bg-blue-900/60 text-blue-200 border-blue-700" },
-  in_production: { label: "En production", color: "bg-amber-900/60 text-amber-200 border-amber-700" },
-  ready_for_review: { label: "À réviser", color: "bg-indigo-900/60 text-indigo-200 border-indigo-700" },
-  approved: { label: "Validé", color: "bg-emerald-900/60 text-emerald-200 border-emerald-700" },
-  published: { label: "Publié", color: "bg-teal-900/60 text-teal-200 border-teal-700" },
-  cancelled: { label: "Annulé", color: "bg-rose-900/60 text-rose-300 border-rose-800" },
+  draft: { label: "Brouillon", color: "bg-muted text-muted-foreground border-border" },
+  scheduled: { label: "Programmé", color: "bg-blue-900/40 text-blue-300 border-blue-800" },
+  in_production: { label: "En production", color: "bg-amber-900/40 text-amber-300 border-amber-800" },
+  ready_for_review: { label: "À réviser", color: "bg-indigo-900/40 text-indigo-300 border-indigo-800" },
+  approved: { label: "Validé", color: "bg-emerald-900/40 text-emerald-300 border-emerald-800" },
+  published: { label: "Publié", color: "bg-teal-900/40 text-teal-300 border-teal-800" },
+  cancelled: { label: "Annulé", color: "bg-rose-900/40 text-rose-300 border-rose-800" },
 };
 
 export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
@@ -66,7 +105,6 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       setLoading(true);
       setError(null);
 
-      // Load calendar items
       let url = `/api/companies/${companyId}/studio/calendar?periodMonth=${selectedMonth}`;
       if (typeFilter !== "all") url += `&contentType=${typeFilter}`;
       if (channelFilter !== "all") url += `&channel=${channelFilter}`;
@@ -76,18 +114,16 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       const data = await res.json();
       setItems(data.items || []);
 
-      // Load stats
       const statsRes = await fetch(`/api/companies/${companyId}/studio/calendar/stats?periodMonth=${selectedMonth}`);
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData.stats);
       }
 
-      // Load marketing plans for generation drawer
       const plansRes = await fetch(`/api/companies/${companyId}/studio/plans?periodMonth=${selectedMonth}`);
       if (plansRes.ok) {
         const plansData = await plansRes.json();
-        const planList = Array.isArray(plansData) ? plansData : (plansData.plans || []);
+        const planList = Array.isArray(plansData) ? plansData : plansData.plans || [];
         setPlans(planList);
         if (planList.length > 0 && !selectedPlanId) {
           setSelectedPlanId(planList[0].id);
@@ -105,7 +141,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       const plansRes = await fetch(`/api/companies/${companyId}/studio/plans?periodMonth=${selectedMonth}`);
       if (plansRes.ok) {
         const plansData = await plansRes.json();
-        const planList = Array.isArray(plansData) ? plansData : (plansData.plans || []);
+        const planList = Array.isArray(plansData) ? plansData : plansData.plans || [];
         setPlans(planList);
         if (planList.length > 0) {
           setSelectedPlanId(planList[0].id);
@@ -200,7 +236,6 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
     }
   };
 
-  // Preview storyboard
   const handlePreviewStoryboard = async (item: EditorialCalendarItem) => {
     try {
       setGeneratingVideo(true);
@@ -228,7 +263,6 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
     }
   };
 
-  // Enqueue video render
   const handleLaunchVideoRender = async (item: EditorialCalendarItem) => {
     try {
       setGeneratingVideo(true);
@@ -250,7 +284,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       setActiveVideoItem(null);
       setPreviewStoryboard(null);
       await fetchData();
-      alert("La vidéo a été ajoutée à la file de production avec succès !");
+      alert("La vidéo a été ajoutée à la file de production avec succès.");
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -272,7 +306,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       }
       const data = await res.json();
       await fetchData();
-      alert(`Contenu dispatché et publié avec succès !\nLien externe : ${data.result?.externalPostUrl}`);
+      alert(`Contenu dispatché et publié avec succès.\nLien externe : ${data.result?.externalPostUrl}`);
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -283,60 +317,65 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl">📅</span>
-              <h2 className="text-xl font-bold text-white tracking-tight">Calendrier Éditorial Omnicanal</h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-950 text-purple-300 border border-purple-800">
-                Lot 4 & 5 — Opérationnels
+              <Calendar className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight text-foreground">Calendrier Éditorial Omnicanal</h2>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                Opérationnel
               </span>
             </div>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Synchronisation des publications (vidéos, posts réseaux sociaux, emails et articles) et génération de vidéo par IA connectée.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
+            <Button
               onClick={openGenerateModal}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
+              size="sm"
+              className="flex items-center gap-2"
             >
-              <span>⚡</span> Générer depuis le Plan
-            </button>
-            <button
+              <Zap className="h-3.5 w-3.5" />
+              Générer depuis le Plan
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg text-sm font-medium transition flex items-center gap-2"
+              className="flex items-center gap-2"
             >
-              <span>+</span> Nouvel Élément
-            </button>
+              <Plus className="h-3.5 w-3.5" />
+              Nouvel Élément
+            </Button>
           </div>
         </div>
 
         {/* Global Statistics */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-6 pt-6 border-t border-zinc-800/80">
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
-              <div className="text-xs text-zinc-500">Total Planifié</div>
-              <div className="text-lg font-bold text-white mt-0.5">{stats.totalItems}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-6 pt-6 border-t border-border">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
+              <div className="text-xs text-muted-foreground">Total Planifié</div>
+              <div className="text-lg font-bold text-foreground mt-0.5">{stats.totalItems}</div>
             </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
               <div className="text-xs text-purple-400">Vidéos</div>
               <div className="text-lg font-bold text-purple-300 mt-0.5">{stats.byType.video || 0}</div>
             </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
               <div className="text-xs text-blue-400">Posts Sociaux</div>
               <div className="text-lg font-bold text-blue-300 mt-0.5">{stats.byType.social_post || 0}</div>
             </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
               <div className="text-xs text-amber-400">Emails</div>
               <div className="text-lg font-bold text-amber-300 mt-0.5">{stats.byType.email || 0}</div>
             </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
               <div className="text-xs text-emerald-400">Articles</div>
               <div className="text-lg font-bold text-emerald-300 mt-0.5">{stats.byType.article || 0}</div>
             </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
+            <div className="bg-background/60 p-3 rounded-lg border border-border">
               <div className="text-xs text-teal-400">Validés / Prêts</div>
               <div className="text-lg font-bold text-teal-300 mt-0.5">
                 {(stats.byStatus.approved || 0) + (stats.byStatus.published || 0)}
@@ -347,24 +386,24 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/60 border border-zinc-800/80 p-4 rounded-xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card/60 border border-border p-4 rounded-xl">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">Mois :</span>
+            <span className="text-xs font-medium text-muted-foreground">Mois :</span>
             <input
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
+              className="bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">Format :</span>
+            <span className="text-xs font-medium text-muted-foreground">Format :</span>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
+              className="bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground"
             >
               <option value="all">Tous les formats</option>
               <option value="video">Vidéos</option>
@@ -375,11 +414,11 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">Canal :</span>
+            <span className="text-xs font-medium text-muted-foreground">Canal :</span>
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
+              className="bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground"
             >
               <option value="all">Tous les canaux</option>
               <option value="LinkedIn">LinkedIn</option>
@@ -392,28 +431,36 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
           </div>
         </div>
 
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={fetchData}
-          className="text-xs text-zinc-400 hover:text-white transition px-2 py-1 bg-zinc-800 rounded border border-zinc-700"
+          className="flex items-center gap-1.5 text-xs"
         >
+          <RefreshCw className="h-3 w-3" />
           Rafraîchir
-        </button>
+        </Button>
       </div>
 
       {/* Main Content Agenda */}
       {loading ? (
-        <div className="text-center py-12 text-zinc-500">Chargement du calendrier éditorial...</div>
+        <div className="text-center py-12 text-muted-foreground text-sm flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Chargement du calendrier éditorial...
+        </div>
       ) : error ? (
-        <div className="p-4 bg-rose-950/50 border border-rose-800 text-rose-300 rounded-xl text-sm">{error}</div>
+        <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm">{error}</div>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 bg-zinc-900/40 border border-dashed border-zinc-800 rounded-xl">
-          <p className="text-zinc-400 text-sm">Aucun contenu planifié pour {selectedMonth}.</p>
-          <button
+        <div className="text-center py-16 bg-card/40 border border-dashed border-border rounded-xl">
+          <p className="text-muted-foreground text-sm">Aucun contenu planifié pour {selectedMonth}.</p>
+          <Button
             onClick={openGenerateModal}
-            className="mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition"
+            size="sm"
+            className="mt-3 flex items-center gap-1.5 mx-auto"
           >
+            <Zap className="h-3.5 w-3.5" />
             Générer le planning depuis un Plan Marketing
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -428,45 +475,47 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               hour: "2-digit",
               minute: "2-digit",
             });
-            const typeConfig = TYPE_LABELS[item.contentType] || TYPE_LABELS.social_post;
+            const typeConfig = TYPE_CONFIG[item.contentType] || TYPE_CONFIG.social_post;
+            const ItemIcon = typeConfig.Icon;
             const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.draft;
             const hasVideoAsset = !!item.publishedUrl && item.publishedUrl.endsWith(".mp4");
 
             return (
               <div
                 key={item.id}
-                className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="bg-card border border-border hover:border-border/80 rounded-xl p-4 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 {/* Left side: Date, Type, Channel */}
                 <div className="flex items-start gap-4">
                   {/* Date badge */}
-                  <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-center min-w-[75px] shrink-0">
-                    <div className="text-xs uppercase font-bold text-zinc-400">{dateStr}</div>
-                    <div className="text-sm font-semibold text-white mt-0.5">{timeStr}</div>
+                  <div className="bg-background border border-border rounded-lg p-2.5 text-center min-w-[75px] shrink-0">
+                    <div className="text-xs uppercase font-bold text-muted-foreground">{dateStr}</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">{timeStr}</div>
                   </div>
 
                   {/* Details */}
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-medium border flex items-center gap-1 ${typeConfig.color}`}
+                        className={`px-2 py-0.5 rounded text-[11px] font-medium border flex items-center gap-1.5 ${typeConfig.color}`}
                       >
-                        <span>{typeConfig.icon}</span> {typeConfig.label}
+                        <ItemIcon className="h-3 w-3" />
+                        {typeConfig.label}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-secondary text-secondary-foreground border border-border">
                         {item.channel}
                       </span>
                       {item.campaignId && (
-                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
                           Studio Lié
                         </span>
                       )}
                     </div>
 
-                    <h4 className="text-sm font-semibold text-white">{item.title}</h4>
+                    <h4 className="text-sm font-semibold text-foreground">{item.title}</h4>
 
                     {item.contentBrief && (
-                      <p className="text-xs text-zinc-400 line-clamp-2 max-w-2xl whitespace-pre-line">
+                      <p className="text-xs text-muted-foreground line-clamp-2 max-w-2xl whitespace-pre-line">
                         {item.contentBrief}
                       </p>
                     )}
@@ -479,26 +528,33 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                   {item.contentType === "video" && (
                     <>
                       {hasVideoAsset ? (
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setViewingVideoItem(item)}
-                          className="px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                          className="bg-emerald-950/40 text-emerald-300 border-emerald-800 hover:bg-emerald-900/60 flex items-center gap-1.5 text-xs"
                         >
-                          <span>▶️</span> Voir la vidéo
-                        </button>
+                          <Play className="h-3 w-3" />
+                          Voir la vidéo
+                        </Button>
                       ) : item.status === "in_production" ? (
-                        <span className="px-3 py-1 bg-amber-950/60 border border-amber-800 text-amber-300 rounded-lg text-xs flex items-center gap-1.5 animate-pulse">
-                          <span>⚙️</span> Rendu en cours...
+                        <span className="px-3 py-1 bg-amber-950/40 border border-amber-800 text-amber-300 rounded-lg text-xs flex items-center gap-1.5 animate-pulse">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Rendu en cours...
                         </span>
                       ) : (
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             setActiveVideoItem(item);
                             setPreviewStoryboard(null);
                           }}
-                          className="px-3 py-1.5 bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm"
+                          className="bg-purple-950/40 text-purple-300 border-purple-800 hover:bg-purple-900/60 flex items-center gap-1.5 text-xs"
                         >
-                          <span>🎬</span> IA Storyboard & Rendu
-                        </button>
+                          <Film className="h-3 w-3" />
+                          IA Storyboard & Rendu
+                        </Button>
                       )}
                     </>
                   )}
@@ -509,25 +565,31 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                       href={item.publishedUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 bg-blue-950/70 hover:bg-blue-900 text-blue-300 border border-blue-800 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                      className="px-3 py-1.5 bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-800 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
                       title="Consulter le contenu publié"
                     >
-                      <span>🔗</span> En ligne
+                      <ExternalLink className="h-3 w-3" />
+                      En ligne
                     </a>
                   ) : item.status === "approved" ? (
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => handlePublishItem(item)}
                       disabled={publishingItemId === item.id}
-                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+                      className="bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 text-xs font-medium"
                       title="Diffuser vers le canal de publication externe"
                     >
-                      <span>{publishingItemId === item.id ? "⏳" : "🚀"}</span>
+                      {publishingItemId === item.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Send className="h-3 w-3" />
+                      )}
                       {publishingItemId === item.id ? "Dispatch..." : "Publier"}
-                    </button>
+                    </Button>
                   ) : null}
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-500">Statut :</span>
+                    <span className="text-xs text-muted-foreground">Statut :</span>
                     <select
                       value={item.status}
                       onChange={(e) => handleStatusChange(item.id, e.target.value as EditorialStatus)}
@@ -545,10 +607,10 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
 
                   <button
                     onClick={() => handleDeleteItem(item.id)}
-                    className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded transition"
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-muted rounded transition"
                     title="Supprimer"
                   >
-                    🗑️
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -560,16 +622,17 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       {/* Video Player Modal */}
       {viewingVideoItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl w-full space-y-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-2xl w-full space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>🎬</span> {viewingVideoItem.title}
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Film className="h-4 w-4 text-purple-400" />
+                {viewingVideoItem.title}
               </h3>
               <button
                 onClick={() => setViewingVideoItem(null)}
-                className="text-zinc-400 hover:text-white text-sm"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -577,7 +640,7 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               <video
                 controls
                 autoPlay
-                className="w-full max-h-[420px] rounded-lg bg-black border border-zinc-800"
+                className="w-full max-h-[420px] rounded-lg bg-black border border-border"
                 src={viewingVideoItem.publishedUrl}
               />
             )}
@@ -588,18 +651,19 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
                   <a
                     href={viewingVideoItem.publishedUrl}
                     download
-                    className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition"
+                    className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border rounded text-xs font-medium transition flex items-center gap-1.5"
                   >
+                    <Download className="h-3 w-3" />
                     Télécharger output.mp4
                   </a>
                 )}
               </div>
-              <button
+              <Button
+                size="sm"
                 onClick={() => setViewingVideoItem(null)}
-                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-medium"
               >
                 Fermer
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -608,33 +672,34 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       {/* Video Generation / Storyboard Modal */}
       {activeVideoItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>✨</span> Générateur de Vidéo & Storyboard IA
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Générateur de Vidéo & Storyboard IA
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">{activeVideoItem.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{activeVideoItem.title}</p>
               </div>
               <button
                 onClick={() => {
                   setActiveVideoItem(null);
                   setPreviewStoryboard(null);
                 }}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Config inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Format / Plateforme</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Format / Plateforme</label>
                 <select
                   value={videoPlatform}
                   onChange={(e: any) => setVideoPlatform(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                 >
                   <option value="tiktok">TikTok (9:16 Vertical)</option>
                   <option value="reels">Reels (9:16 Vertical)</option>
@@ -645,11 +710,11 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Template Graphique</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Template Graphique</label>
                 <select
                   value={videoTemplate}
                   onChange={(e: any) => setVideoTemplate(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                 >
                   <option value="editorial">Éditorial (Élégant, Typographie)</option>
                   <option value="product">Produit (Focus Offre & Mockup)</option>
@@ -658,11 +723,11 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Narration Vocale</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Narration Vocale</label>
                 <select
                   value={videoNarration}
                   onChange={(e: any) => setVideoNarration(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                 >
                   <option value="fr">Français (eSpeak local)</option>
                   <option value="en">Anglais (eSpeak local)</option>
@@ -675,67 +740,84 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
             {previewStoryboard ? (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
                     Storyboard Généré ({previewStoryboard.totalDuration}s — {previewStoryboard.scenes.length} scènes)
                   </h4>
-                  <span className="text-[11px] text-zinc-400">
+                  <span className="text-[11px] text-muted-foreground">
                     Persona : {previewStoryboard.explanation.targetPersonaName || "Cible standard"}
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   {previewStoryboard.scenes.map((scene, idx) => (
-                    <div key={idx} className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-xs space-y-1">
-                      <div className="flex items-center justify-between text-zinc-400 font-semibold">
+                    <div key={idx} className="bg-background p-3 rounded-lg border border-border text-xs space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground font-semibold">
                         <span>Scène {idx + 1} : {scene.title}</span>
-                        <span className="text-purple-300">{scene.duration}s</span>
+                        <span className="text-primary">{scene.duration}s</span>
                       </div>
-                      <p className="text-zinc-300">{scene.text}</p>
+                      <p className="text-foreground">{scene.text}</p>
                       {scene.speech && (
-                        <p className="text-zinc-500 italic">🎙️ Voix off : "{scene.speech}"</p>
+                        <p className="text-muted-foreground italic flex items-center gap-1.5">
+                          <Mic className="h-3 w-3 shrink-0" />
+                          Voix off : "{scene.speech}"
+                        </p>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-zinc-950/60 border border-dashed border-zinc-800 rounded-lg text-center">
-                <p className="text-xs text-zinc-400">
+              <div className="p-4 bg-background/60 border border-dashed border-border rounded-lg text-center">
+                <p className="text-xs text-muted-foreground">
                   Cliquez sur "Prévisualiser le Storyboard" pour générer la narration et les 4 scènes selon la Mémoire de Marque.
                 </p>
               </div>
             )}
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-              <button
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => handlePreviewStoryboard(activeVideoItem)}
                 disabled={generatingVideo}
-                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition"
+                className="flex items-center gap-1.5"
               >
-                {generatingVideo && !previewStoryboard ? "Génération..." : "👁️ Prévisualiser le Storyboard"}
-              </button>
+                {generatingVideo && !previewStoryboard ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+                {generatingVideo && !previewStoryboard ? "Génération..." : "Prévisualiser le Storyboard"}
+              </Button>
 
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setActiveVideoItem(null);
                     setPreviewStoryboard(null);
                   }}
-                  className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
                 >
                   Annuler
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
                   onClick={() => handleLaunchVideoRender(activeVideoItem)}
                   disabled={generatingVideo}
-                  className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs font-medium transition flex items-center gap-1.5 shadow-sm"
+                  className="flex items-center gap-1.5"
                 >
-                  <span>🚀</span> {generatingVideo ? "Lancement..." : "Lancer le Rendu Vidéo"}
-                </button>
+                  {generatingVideo ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Zap className="h-3.5 w-3.5" />
+                  )}
+                  {generatingVideo ? "Lancement..." : "Lancer le Rendu Vidéo"}
+                </Button>
               </div>
             </div>
           </div>
@@ -745,11 +827,12 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
       {/* Generate From Plan Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>⚡</span> Générer le Calendrier Éditorial
+          <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full space-y-4">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              Générer le Calendrier Éditorial
             </h3>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               Sélectionnez un plan marketing pour convertir automatiquement ses propositions en créneaux calendaires optimisés sur 4 semaines.
             </p>
 
@@ -759,11 +842,11 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
             ) : (
               <div className="space-y-3">
-                <label className="block text-xs font-medium text-zinc-300">Plan Marketing source :</label>
+                <label className="block text-xs font-medium text-muted-foreground">Plan Marketing source :</label>
                 <select
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2.5 text-xs text-foreground"
                 >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -774,67 +857,74 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowGenerateModal(false)}
-                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
               >
                 Annuler
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
                 onClick={handleGenerateFromPlan}
                 disabled={!selectedPlanId || loading}
-                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs font-medium transition"
+                className="flex items-center gap-1.5"
               >
-                {loading ? "Génération..." : "Générer le calendrier"}
-              </button>
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                {loading ? "Génération en cours..." : "Générer le Calendrier"}
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create Item Modal */}
+      {/* Manual Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>+</span> Nouveau Contenu au Planning
+          <form
+            onSubmit={handleCreateItem}
+            className="bg-card border border-border rounded-xl p-6 max-w-md w-full space-y-4"
+          >
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Plus className="h-4 w-4 text-primary" />
+              Ajouter un Contenu au Calendrier
             </h3>
 
-            <form onSubmit={handleCreateItem} className="space-y-3">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Titre du contenu</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Titre de la publication</label>
                 <input
                   required
                   type="text"
                   value={newItemTitle}
                   onChange={(e) => setNewItemTitle(e.target.value)}
-                  placeholder="Ex: Démo produit 15s TikTok"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
+                  placeholder="ex: Vidéo teaser - Lancement Nexus Pro"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Format</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Type de contenu</label>
                   <select
                     value={newItemType}
                     onChange={(e: any) => setNewItemType(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                    className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                   >
                     <option value="video">Vidéo</option>
                     <option value="social_post">Post Réseau</option>
-                    <option value="email">Email / Newsletter</option>
-                    <option value="article">Article / Blog</option>
+                    <option value="email">Email</option>
+                    <option value="article">Article</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Canal</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Canal cible</label>
                   <select
                     value={newItemChannel}
                     onChange={(e) => setNewItemChannel(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                    className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                   >
                     <option value="LinkedIn">LinkedIn</option>
                     <option value="YouTube">YouTube</option>
@@ -847,45 +937,46 @@ export const EditorialCalendarPanel: React.FC<Props> = ({ companyId }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Date et heure de publication</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Date et heure de diffusion</label>
                 <input
                   required
                   type="datetime-local"
                   value={newItemDate}
                   onChange={(e) => setNewItemDate(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Brief / Accroche (optionnel)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Brief / Notes éditoriales</label>
                 <textarea
                   rows={3}
                   value={newItemBrief}
                   onChange={(e) => setNewItemBrief(e.target.value)}
-                  placeholder="Objectif, hook ou consignes spécifiques..."
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground"
+                  placeholder="Points clés, persona ciblé, message principal..."
                 />
               </div>
+            </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-medium transition"
-                >
-                  {loading ? "Création..." : "Ajouter au planning"}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={loading || !newItemTitle}
+              >
+                {loading ? "Création..." : "Ajouter au Calendrier"}
+              </Button>
+            </div>
+          </form>
         </div>
       )}
     </div>
