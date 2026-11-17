@@ -6,6 +6,7 @@ import { agents, approvals, assets, brandProfiles, campaigns, campaignWorkflows,
 import { WORKFLOW_STAGES, campaignStrategySchema, type CampaignWorkflowStage } from "@soravyn/shared";
 import { issueService } from "./issues.js";
 import { videoInput } from "./video-contract.js";
+import { getBrandMemoryContext } from "./brand-memory.js";
 import { conflict, forbidden, notFound, unprocessable } from "../errors.js";
 type Actor={type:"user"|"agent";id:string;runId?:string|null};
 type Stage=typeof campaignStages.$inferSelect;
@@ -42,7 +43,8 @@ export function campaignWorkflowService(db:Db){
     const [existing]=await tx.select().from(campaignWorkflows).where(eq(campaignWorkflows.campaignId,campaignId));if(existing)throw conflict("Workflow already exists");
     const [brand]=await tx.select().from(brandProfiles).where(eq(brandProfiles.companyId,companyId));if(!brand)throw unprocessable("Configure the brand first");
     for(const id of [team.strategistId,team.creativeId,team.producerId]){const [agent]=await tx.select().from(agents).where(and(eq(agents.id,id),eq(agents.companyId,companyId)));if(!agent||["terminated","pending_approval"].includes(agent.status))throw unprocessable("Every responsible agent must be available in this client");}
-    const [workflow]=await tx.insert(campaignWorkflows).values({companyId,campaignId,brandSnapshot:{id:brand.id,revisionAt:brand.updatedAt.toISOString(),name:brand.name,description:brand.description,industry:brand.industry,audience:brand.audience,tone:brand.tone,languages:brand.languages,colors:brand.colors,fontFamily:brand.fontFamily,editorialRules:brand.editorialRules,logoAssetId:brand.logoAssetId,logoLicense:brand.logoLicense},briefSnapshot:{name:campaign.name,brief:campaign.brief,objectives:campaign.objectives,audience:campaign.audience,channels:campaign.channels}}).returning();
+    const memory = await getBrandMemoryContext(tx, companyId);
+    const [workflow]=await tx.insert(campaignWorkflows).values({companyId,campaignId,brandSnapshot:{id:brand.id,revisionAt:brand.updatedAt.toISOString(),name:brand.name,description:brand.description,industry:brand.industry,audience:brand.audience,tone:brand.tone,languages:brand.languages,colors:brand.colors,fontFamily:brand.fontFamily,editorialRules:brand.editorialRules,logoAssetId:brand.logoAssetId,logoLicense:brand.logoLicense,memory:{products:memory.products,personas:memory.personas,objections:memory.objections,sources:memory.sources}},briefSnapshot:{name:campaign.name,brief:campaign.brief,objectives:campaign.objectives,audience:campaign.audience,channels:campaign.channels}}).returning();
     const teamIds=[team.strategistId,team.creativeId,team.producerId];
     for(const [index,kind] of WORKFLOW_STAGES.entries()){const task=await makeTask(tx,workflow,kind,actor,index>0);await tx.insert(campaignStages).values({companyId,campaignId,kind,agentId:teamIds[index],taskId:task.id,status:index===0?"ready":"blocked"});}
     await tx.update(campaigns).set({status:"strategy",producerAgentId:team.producerId,updatedAt:new Date()}).where(eq(campaigns.id,campaignId));

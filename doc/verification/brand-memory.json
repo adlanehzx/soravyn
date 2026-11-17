@@ -1,0 +1,42 @@
+{
+  "lot": "Lot 2 — Mémoire de marque",
+  "criterion": "Un agent prépare un brief avec les bonnes informations et signale celles qui manquent.",
+  "passed": true,
+  "timestamp": "2026-11-17T00:56:48.682Z",
+  "testedCompanyId": "d93663f1-2e7d-48c3-a3a7-6d700a9c71a1",
+  "stats": {
+    "productCount": 1,
+    "personaCount": 2,
+    "objectionCount": 1,
+    "sourceCount": 1
+  },
+  "checks": [
+    "Brand products table with pricing, currency, features, and value proposition",
+    "Brand personas table with pain points, goals, objections, and preferred channels",
+    "Brand objections table with categories, recommended responses, and verifiable proofs",
+    "Brand sources table with kind, content, URL, tags, and verified status",
+    "Deterministic brief evaluation detecting missing product pricing (error severity)",
+    "Deterministic brief evaluation detecting unstated target persona (warning)",
+    "Deterministic brief evaluation detecting channel mismatch vs persona preferences",
+    "Deterministic brief evaluation detecting unverified numeric claims",
+    "Enriched brief context generation with reconciled facts and agent recommendations",
+    "Strict company boundary & multi-tenant isolation verified with zero leakage"
+  ],
+  "sampleEnrichedBrief": {
+    "campaignName": "Campagne Performance B2B Q4",
+    "objectives": "Convaincre les directions marketing sur LinkedIn",
+    "briefContent": "Sarah Directrice Marketing découvre Soravyn Studio Pro : réduisez vos coûts de 65% et atteignez une cadence 4x en 30 jours. Gardez le contrôle absolu avec validation humaine intégrée face aux craintes sur l'authenticité.",
+    "channels": [
+      "LinkedIn",
+      "YouTube"
+    ],
+    "brandTone": "Audacieux, direct, fondé sur la preuve",
+    "editorialRules": "Ne jamais faire de fausse promesse. Étayer chaque chiffre avec une source validée."
+  },
+  "sampleAdditions": [
+    "Offre mise en avant : Soravyn Studio Pro (990€/mois tout inclus)",
+    "Accroche valeur : Créez vos vidéos de marque en 15 minutes sans compétence technique.",
+    "Angle d'accroche persona : Répondre au problème \"Délais d'agence de 3 semaines\"",
+    "Traitement de l'objection \"L'IA manque d'authenticité et d'émotion humaine\" via l'argument : \"Soravyn applique rigoureusement la charte éditoriale et permet la validation humaine à chaque étape.\""
+  ]
+}

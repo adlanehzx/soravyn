@@ -2,6 +2,7 @@ import { StudioDiagnostics } from "../components/StudioDiagnostics";
 import { CampaignCreativePanel } from "../components/CampaignCreativePanel";
 import { CampaignBudgetPanel } from "../components/CampaignBudgetPanel";
 import { CampaignWorkflowPanel } from "../components/CampaignWorkflowPanel";
+import { BrandMemoryPanel } from "../components/BrandMemoryPanel";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCompany } from "../context/CompanyContext";
@@ -66,6 +67,7 @@ function ClientStudio({ companyId }: { companyId: string }) {
         <Button disabled={create.isPending} type="submit">{create.isPending ? "Création…" : "Créer la campagne"}</Button>
       </form>
     </div>
+    <BrandMemoryPanel companyId={companyId} />
     <section className="space-y-4"><h2 className="text-xl font-medium">Campagnes du client</h2><label className="block max-w-sm space-y-1 text-sm"><span>Producer pour les nouveaux briefs vidéo</span><select className={fieldClass} value={producerId} onChange={e => setProducerId(e.target.value)}><option value="">Choisir un agent du client</option>{agents.data?.filter(a => !["terminated", "pending_approval"].includes(a.status)).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label><p className="text-sm text-muted-foreground">La tâche est créée dans le backlog. Son exécution se pilote depuis les tâches ; aucun modèle payant n’est appelé par ce bouton.</p>
       {campaigns.isLoading && <p role="status">Chargement des campagnes…</p>}
       {campaigns.data?.length === 0 && <p className="rounded-xl border border-dashed border-border p-8 text-muted-foreground">Votre première campagne commence par un brief. Définissez son objectif ci-dessus.</p>}

@@ -280,3 +280,24 @@ export { applyLegacyEnvironment, LEGACY_HOME_NAMES, LEGACY_LOCAL_BOARD_EMAIL, LE
 export { WORKFLOW_STAGES, startCampaignWorkflowSchema, campaignStrategySchema, submitCampaignDeliverableSchema, authorizeCampaignTaskSchema, type CampaignWorkflowStage } from "./validators/campaign-workflow.js";
 export { scheduleCampaignVideoSchema, recordCampaignDeliverySchema, campaignMeasurementSchema } from "./validators/campaign-workflow.js";
 export type { CampaignStageView, CampaignDeliverableView, CampaignWorkflowView, CampaignScheduleEntry, CampaignOperationalReport } from "./types/campaign-workflow.js";
+export {
+  brandProductInputSchema,
+  brandPersonaInputSchema,
+  brandObjectionInputSchema,
+  brandSourceInputSchema,
+  prepareBriefInputSchema,
+  type BrandProductInput,
+  type BrandPersonaInput,
+  type BrandObjectionInput,
+  type BrandSourceInput,
+  type PrepareBriefInput,
+} from "./validators/brand-memory.js";
+export type {
+  BrandProduct,
+  BrandPersona,
+  BrandObjection,
+  BrandSource,
+  MissingInformationFinding,
+  BriefPreparationResult,
+  BrandMemoryContext,
+} from "./types/brand-memory.js";
