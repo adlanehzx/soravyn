@@ -663,6 +663,8 @@ function RetentionPanel({
       ),
     enabled: open,
   });
+  const archives=useQuery({queryKey:[base,"archives"],queryFn:()=>api.get<{id:string;status:string;archivedAt:string}[]>(`${base}/operations/archives`),enabled:open});
+  const restore=useMutation({mutationFn:(id:string)=>api.post(`${base}/operations/retention/${id}/restore`,{confirmRestore:true}),onSuccess:async()=>{await archives.refetch();await query.refetch();await refresh();}});
   const archive = useMutation({
     mutationFn: () =>
       api.post(`${base}/operations/retention/archive`, {
@@ -671,6 +673,7 @@ function RetentionPanel({
       }),
     onSuccess: async () => {
       await query.refetch();
+      await archives.refetch();
       await refresh();
     },
   });
@@ -708,9 +711,12 @@ function RetentionPanel({
       >
         Archiver
       </Button>
-      {(query.error || archive.error) && (
+      <h3 className="mt-4 text-sm font-medium">Archives récupérables</h3>
+      {archives.data?.length===0&&<p className="text-xs text-muted-foreground">Aucune archive.</p>}
+      {archives.data?.map(job=><div key={job.id} className="flex flex-wrap items-center gap-2 text-xs"><span>{job.id.slice(0,8)} · {job.status}</span><Button variant="outline" disabled={restore.isPending} onClick={()=>restore.mutate(job.id)}>Restaurer les fichiers</Button></div>)}
+      {(query.error || archive.error || archives.error || restore.error) && (
         <p role="alert" className="text-destructive">
-          {(query.error || archive.error)?.message}
+          {(query.error || archive.error || archives.error || restore.error)?.message}
         </p>
       )}
     </details>

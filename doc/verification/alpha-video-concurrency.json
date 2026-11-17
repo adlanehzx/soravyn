@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "mode": "four real isolated 640px scene previews; bounded concurrency check, not production load benchmark",
+  "rounds": [
+    {
+      "limit": 1,
+      "peak": 1
+    },
+    {
+      "limit": 2,
+      "peak": 2
+    },
+    {
+      "limit": 2,
+      "peak": 1
+    }
+  ],
+  "maxObserved": 2,
+  "jobs": [
+    "14f2d630-07c7-40d4-be16-55fe5f8d0bf7",
+    "fcee9671-a5d4-4122-8c61-ff9b64e3cc3e",
+    "32b1718f-983d-4527-a133-fa485972b9a4",
+    "a53e8e5a-0682-4b82-a44a-c11bea3566f0"
+  ],
+  "checks": [
+    "four independent worker processes per wave",
+    "global limit one admits only one render",
+    "per-client limit one maintained",
+    "queued work remains durable",
+    "all four MP4s decode fully"
+  ],
+  "externalModelCalls": false
+}

@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "filesVerified": 301,
+  "videoBytes": 28588179,
+  "backupBytes": 536519,
+  "masterKeyRestored": true,
+  "masterKeyInitializedForFixture": true,
+  "encryptedFixtureResolved": true,
+  "browserProfilesExcluded": true,
+  "restorationMode": "separate temporary database and separate file tree; original instance not replaced",
+  "checks": [
+    "native SQL backup restored",
+    "published video files copied and all hashes verified",
+    "local asset files copied and all hashes verified",
+    "restored master key decrypts fixture from restored database",
+    "migration journal retained",
+    "no credentials printed or committed"
+  ],
+  "limits": [
+    "no boot of a second full application instance",
+    "browser sessions excluded; require manual login after recovery",
+    "active rendering must be stopped for a coordinated operational snapshot"
+  ]
+}

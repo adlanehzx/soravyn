@@ -1,0 +1,5 @@
+import {readFile} from 'node:fs/promises';import {join} from 'node:path';
+import {loadConfig} from '../../server/src/config.js';import {resolveEmbeddedIdentity} from '../../server/src/legacy-database-compat.js';import {createDb} from '../../packages/db/src/index.js';
+export async function alphaDb(){const config=loadConfig();let port=config.embeddedPostgresPort;if(!config.databaseUrl)port=Number((await readFile(join(config.embeddedPostgresDataDir,'postmaster.pid'),'utf8')).split('\n')[3]);return createDb(config.databaseUrl||(await resolveEmbeddedIdentity(port)).connectionUrl);}
+export const origin=process.env.SORAVYN_TEST_URL||'http://127.0.0.1:3208';
+export async function call(path:string,method='GET',body?:unknown,status=200){const r=await fetch(origin+'/api'+path,{method,headers:{Origin:origin,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json();if(r.status!==status)throw new Error(`${method} ${path}: ${r.status} ${JSON.stringify(data)}`);return data;}

@@ -37,7 +37,7 @@ Les montants sont ceux déclarés à SORAVYN : une facture fournisseur peut arri
 
 ## Exploitation, rétention et sauvegardes
 
-La page affiche les échecs récents, politiques absentes ou de confiance, permis actifs et intermédiaires arrivés à échéance. L'archivage est manuel et réversible : les fichiers des jobs échoués, annulés, audio ou aperçus anciens sont déplacés vers `.retention/<companyId>/`. Les MP4 finaux sont exclus. Aucune purge définitive automatique ni notification externe n'est implémentée. Une restauration d'archive reste une opération d'administration hors interface.
+La page affiche les échecs récents, politiques absentes ou de confiance, permis actifs et intermédiaires arrivés à échéance. L'archivage est manuel et réversible : les fichiers des jobs échoués, annulés, audio ou aperçus anciens sont déplacés vers `.retention/<companyId>/`. Les MP4 finaux sont exclus. Aucune purge définitive automatique ni notification externe n'est implémentée. La console de gouvernance et l'API (`GET /operations/archives`, `POST /operations/retention/:jobId/restore`) permettent de lister les archives réversibles et de restaurer leurs fichiers avec confirmation explicite, sous contrôle strict d'isolation de workspace.
 
 Les sauvegardes SQL utilisent maintenant `pg_dump`, avec fichier temporaire privé et publication atomique. Installer un client PostgreSQL compatible avec la version du serveur ; `SORAVYN_PG_DUMP_PATH` permet de choisir le binaire. Le mot de passe est transmis par environnement, pas dans les arguments. La sauvegarde SQL ne contient pas les fichiers vidéo ni la clé de chiffrement : sauvegarder aussi le stockage et la clé maître séparément, avec contrôle d'accès.
 

@@ -10,11 +10,12 @@ import {
   type Db,
 } from "@soravyn/db";
 import { z } from "zod";
-import { stat, readdir, rename, mkdir } from "node:fs/promises";
+import { stat, readdir, rename, mkdir, lstat } from "node:fs/promises";
 import { join } from "node:path";
 import { assertWorkspaceAdmin } from "./governance.js";
 import { getActorInfo } from "./authz.js";
 import { logActivity } from "../services/activity-log.js";
+import { conflict, notFound } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { videoRoot } from "../services/video-contract.js";
 async function folderBytes(path: string): Promise<number> {
@@ -192,12 +193,8 @@ export function operationsRoutes(db: Db) {
             )
           )
             return;
-          const destination = join(
-            videoRoot(),
-            ".retention",
-            companyId,
-            `${id}-${Date.now()}`
-          );
+          const archiveName = `${id}-${Date.now()}`;
+          const destination = join(videoRoot(), ".retention", companyId, archiveName);
           await mkdir(join(videoRoot(), ".retention", companyId), {
             recursive: true,
             mode: 0o700,
@@ -214,6 +211,7 @@ export function operationsRoutes(db: Db) {
               input: {
                 ...job.input,
                 artifactsArchivedAt: new Date().toISOString(),
+                artifactArchiveName: archiveName,
               },
               updatedAt: new Date(),
             })
@@ -232,5 +230,27 @@ export function operationsRoutes(db: Db) {
       res.json({ archived, mode: "reversible_archive" });
     }
   );
+  router.get(`${base}/archives`, async(req,res)=>{
+    const rows=await db.select({id:videoJobs.id,status:videoJobs.status,input:videoJobs.input}).from(videoJobs).where(eq(videoJobs.companyId,req.params.companyId as string));
+    res.json(rows.filter(row=>typeof row.input.artifactArchiveName==="string").map(row=>({id:row.id,status:row.status,archivedAt:row.input.artifactsArchivedAt})));
+  });
+  router.post(`${base}/retention/:jobId/restore`,validate(z.object({confirmRestore:z.literal(true)}).strict()),async(req,res)=>{
+    const companyId=req.params.companyId as string;const id=z.string().uuid().parse(req.params.jobId);
+    await db.transaction(async tx=>{
+      const [job]=await tx.select().from(videoJobs).where(and(eq(videoJobs.id,id),eq(videoJobs.companyId,companyId))).for("update");
+      if(!job)throw notFound("Job not found");
+      const name=job.input.artifactArchiveName;
+      if(typeof name!=="string"||!new RegExp(`^${id}-[0-9]{13}$`).test(name)||!["failed","cancelled","preview_ready","audio_ready"].includes(job.status))throw conflict("No restorable archive for this job");
+      const source=join(videoRoot(),".retention",companyId,name),destination=join(videoRoot(),companyId,id);
+      const info=await lstat(source).catch(()=>null);if(!info||!info.isDirectory()||info.isSymbolicLink())throw conflict("Archive unavailable");
+      if(await lstat(destination).then(()=>true,()=>false))throw conflict("Current artifacts already exist; restoration would overwrite them");
+      await mkdir(join(videoRoot(),companyId),{recursive:true,mode:0o700});
+      await rename(source,destination);
+      const {artifactArchiveName,artifactsArchivedAt,...input}=job.input;
+      await tx.update(videoJobs).set({input,updatedAt:new Date()}).where(eq(videoJobs.id,id));
+    });
+    await logActivity(db,{companyId,...getActorInfo(req),action:"operations.artifacts_restored",entityType:"video_job",entityId:id});
+    res.json({restored:id});
+  });
   return router;
 }
