@@ -1,0 +1,37 @@
+{
+  "lot": "Lot 3 — Plan marketing",
+  "success": true,
+  "timestamp": "2026-11-17T01:16:37.368Z",
+  "criteria": "Transformer un objectif commercial en plan mensuel modifiable et soumis à validation",
+  "verificationSteps": [
+    {
+      "step": "data_isolation",
+      "status": "passed",
+      "details": "Company boundaries strictly enforced across plans, themes, proposals, and approvals."
+    },
+    {
+      "step": "automated_planner_generation",
+      "status": "passed",
+      "details": "Generated monthly plan with 4 weekly themes and 8 proposals based on Brand Memory.",
+      "allocatedBudgetSum": 8000,
+      "totalBudget": 8000
+    },
+    {
+      "step": "plan_modifiability",
+      "status": "passed",
+      "details": "Themes, proposals, targets, and budgets can be edited or augmented dynamically."
+    },
+    {
+      "step": "governance_validation_gate",
+      "status": "passed",
+      "details": "Plan submitted to Approvals center, validated and signed off by operator with approval audit trail.",
+      "approvalId": "450a8537-1154-443b-87d3-ad6aac9f6113"
+    },
+    {
+      "step": "live_campaign_conversion",
+      "status": "passed",
+      "details": "Converted proposal \"Vidéo Accroche : Le coût invisible de Goulots d'étranglement créatifs\" into live Campaign Studio record (16e6e6dd-066d-490e-8622-771b8288550b).",
+      "campaignId": "16e6e6dd-066d-490e-8622-771b8288550b"
+    }
+  ]
+}

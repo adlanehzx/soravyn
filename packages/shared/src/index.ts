@@ -301,3 +301,27 @@ export type {
   BriefPreparationResult,
   BrandMemoryContext,
 } from "./types/brand-memory.js";
+export {
+  generateMarketingPlanInputSchema,
+  marketingPlanInputSchema,
+  marketingPlanUpdateSchema,
+  marketingPlanThemeInputSchema,
+  marketingPlanProposalInputSchema,
+  submitPlanValidationInputSchema,
+  type GenerateMarketingPlanInputType,
+  type MarketingPlanInput,
+  type MarketingPlanUpdateInput,
+  type MarketingPlanThemeInput,
+  type MarketingPlanProposalInput,
+  type SubmitPlanValidationInput,
+} from "./validators/marketing-plan.js";
+export type {
+  MarketingPlanStatus,
+  ProposalStatus,
+  MarketingPlan,
+  MarketingPlanTheme,
+  MarketingPlanProposal,
+  MarketingPlanWithDetails,
+  GenerateMarketingPlanInput,
+  MarketingPlanSummary,
+} from "./types/marketing-plan.js";

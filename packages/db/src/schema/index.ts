@@ -41,3 +41,4 @@ export { productionSteps } from "./production_steps.js";
 export { companyGovernance, agentExecutionPolicies, executionPermits, taskCheckpoints, taskRecoveries } from "./governance.js";
 export { flowJobs } from './flow.js';
 export { brandProducts, brandPersonas, brandObjections, brandSources } from "./brand_memory.js";
+export { marketingPlans, marketingPlanThemes, marketingPlanProposals } from "./marketing_plan.js";
