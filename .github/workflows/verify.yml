@@ -75,9 +75,6 @@ jobs:
     name: Dependency audit (informational)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Reports known vulnerabilities in production dependencies without failing
-    # the build. Make it blocking once the open advisories are resolved.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -88,4 +85,15 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --prod --audit-level=high
+      # Reports known vulnerabilities in production dependencies in the job
+      # summary without failing the build. Drop the `|| true` to make it
+      # blocking once the open advisories are resolved.
+      - name: Audit production dependencies
+        run: |
+          pnpm audit --prod --audit-level=high | tee audit.txt || true
+          {
+            echo '### pnpm audit (production dependencies)'
+            echo '```'
+            tail -n 15 audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
