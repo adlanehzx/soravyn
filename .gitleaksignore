@@ -1,0 +1,2 @@
+# False positive: an example secret id (UUID) in the secrets documentation.
+a1c5d222343af7a08121c3bfe1530bba852d58f2:docs/deploy/secrets.md:generic-api-key:76

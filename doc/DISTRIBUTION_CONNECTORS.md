@@ -1,46 +1,39 @@
-# SORAVYN — Lot 6 : Connecteurs de Publication & Distribution Omnicanale
+# SORAVYN — Publishing and omnichannel distribution connectors
 
-## 1. Vue d'Ensemble
+## 1. Overview
 
-Le **Lot 6** implémente le moteur de diffusion autonome et sécurisé de SORAVYN Studio. Il connecte les créneaux validés du calendrier éditorial (`editorial_calendar_items`) aux canaux de distribution externes (LinkedIn, YouTube, TikTok, X, CMS, Webhooks d'automatisation Zapier/Make).
-
----
-
-## 2. Architecture & Composants
-
-### 2.1 Modèle de Données (`packages/db/src/schema/distribution.ts`)
-- **`distribution_channels`** : Enregistre les connecteurs omnicanaux configurés par entreprise (`channel_type`: `linkedin`, `youtube`, `tiktok`, `x`, `webhook`, `cms`), avec état (`active`, `paused`, `error`), endpoints, headers HTTP et configurations d'authentification chiffrées/protégées.
-- **`distribution_logs`** : Audit trail immuable de chaque diffusion (payload envoyé, réponse de l'API distante, code HTTP, identifiant externe `external_post_id`, URL finale de consultation `external_post_url` et horodatage `dispatched_at`).
-
-### 2.2 Verrou de Sécurité & Gouvernance (`server/src/services/distribution.ts`)
-- **Contrôle Pré-Publication Strict** : Le moteur refuse catégoriquement de publier un contenu si son statut n'est pas `approved` (ou `ready_for_review` / `scheduled`). Tout contenu `draft` ou non validé par un décideur lève une exception 400.
-- **Signature HMAC SHA-256** : Pour les webhooks et intégrations sécurisées, signature dynamique du payload injectée dans l'en-tête `X-Soravyn-Signature`.
-- **Adaptateurs d'URLs Externes** : Construction et résolution automatique des permaliens distants selon le canal (`linkedin.com/feed/update/...`, `youtube.com/watch?v=...`, `tiktok.com/@brand/video/...`, `x.com/brand/status/...`).
-
-### 2.3 Routes API Express (`server/src/routes/distribution.ts`)
-- `GET /api/companies/:companyId/distribution/channels` : Liste des canaux configurés pour l'entreprise.
-- `POST /api/companies/:companyId/distribution/channels` : Configuration d'un nouveau canal de diffusion.
-- `PATCH /api/companies/:companyId/distribution/channels/:channelId` : Modification des paramètres ou désactivation.
-- `DELETE /api/companies/:companyId/distribution/channels/:channelId` : Suppression d'un connecteur.
-- `POST /api/companies/:companyId/distribution/channels/:channelId/test` : Test de connectivité et mesure de latence en direct.
-- `POST /api/companies/:companyId/distribution/calendar/:itemId/publish` : Déclenchement de la publication en 1 clic.
-- `GET /api/companies/:companyId/distribution/logs` : Consultation des logs d'audit de diffusion.
-
-### 2.4 Interface Utilisateur (`ui/src/components/EditorialCalendarPanel.tsx`)
-- **Bouton d'Action `🚀 Publier`** : Visible sur les contenus validés (`status === 'approved'`), avec indicateur de progression en temps réel (`⏳ Dispatch...`).
-- **Lien Externe `🔗 En ligne`** : Accessible instantanément dès qu'un contenu passe au statut `published` avec son URL distante.
+The distribution engine is SORAVYN Studio's autonomous and secure publishing component. It connects the validated slots of the editorial calendar (`editorial_calendar_items`) to external distribution channels (LinkedIn, YouTube, TikTok, X, CMS, Zapier/Make automation webhooks).
 
 ---
 
-## 3. Matrice de Vérification Réalisée
+## 2. Architecture and components
 
-- **Tests unitaires (`server/src/__tests__/distribution.test.ts`)** : 3/3 tests validés (verrou de gouvernance, dispatch unitaire, mapping d'URLs).
-- **Tests de routes et permissions (`server/src/__tests__/distribution-routes.test.ts`)** : 3/3 tests validés (isolation multitenant 403, validation Zod).
-- **Suite globale vitest** : **287/287 tests passés** (68 fichiers de test) à 100%.
-- **Typecheck global (`pnpm -r typecheck`)** : 0 erreur TypeScript sur les 13 packages.
-- **Build monorepo (`pnpm -r build`)** : 100% réussi (UI Vite + Server).
-- **Smoke Test E2E PostgreSQL (`scripts/verification/distribution-smoke.ts`)** :
-  - Cycle complet de distribution exécuté sur instance PostgreSQL 17 réelle (`soravyn_test`).
-  - Blocage vérifié sur les contenus `draft` (violation de gouvernance).
-  - Validation du basculement en `published`, inscription du log d'audit et étanchéité cross-entreprises.
-  - Preuve enregistrée dans `doc/verification/distribution.json`.
+### 2.1 Data model (`packages/db/src/schema/distribution.ts`)
+- **`distribution_channels`**: records the omnichannel connectors configured per company (`channel_type`: `linkedin`, `youtube`, `tiktok`, `x`, `webhook`, `cms`), with state (`active`, `paused`, `error`), endpoints, HTTP headers and encrypted/protected authentication settings.
+- **`distribution_logs`**: immutable audit trail of every dispatch (payload sent, remote API response, HTTP code, external identifier `external_post_id`, final viewing URL `external_post_url` and `dispatched_at` timestamp).
+
+### 2.2 Security lock and governance (`server/src/services/distribution.ts`)
+- **Strict pre-publication check**: the engine flatly refuses to publish content whose status is not `approved` (or `ready_for_review` / `scheduled`). Any `draft` content, or content not validated by a decision maker, raises a 400 exception.
+- **HMAC SHA-256 signature**: for webhooks and secure integrations, a dynamic payload signature is injected in the `X-Soravyn-Signature` header.
+- **External URL adapters**: automatic construction and resolution of remote permalinks according to the channel (`linkedin.com/feed/update/...`, `youtube.com/watch?v=...`, `tiktok.com/@brand/video/...`, `x.com/brand/status/...`).
+
+### 2.3 Express API routes (`server/src/routes/distribution.ts`)
+- `GET /api/companies/:companyId/distribution/channels`: list of the channels configured for the company.
+- `POST /api/companies/:companyId/distribution/channels`: configuration of a new distribution channel.
+- `PATCH /api/companies/:companyId/distribution/channels/:channelId`: change of settings or deactivation.
+- `DELETE /api/companies/:companyId/distribution/channels/:channelId`: removal of a connector.
+- `POST /api/companies/:companyId/distribution/channels/:channelId/test`: live connectivity test and latency measurement.
+- `POST /api/companies/:companyId/distribution/calendar/:itemId/publish`: one-click publication trigger.
+- `GET /api/companies/:companyId/distribution/logs`: consultation of the distribution audit logs.
+
+### 2.4 User interface (`ui/src/components/EditorialCalendarPanel.tsx`)
+- **`🚀 Publish` action button**: visible on validated content (`status === 'approved'`), with a real-time progress indicator (`⏳ Dispatch...`).
+- **`🔗 Live` external link**: available as soon as a content item reaches the `published` status with its remote URL.
+
+---
+
+## 3. Tests
+
+- **Unit tests** (`server/src/__tests__/distribution.test.ts`): governance lock, single dispatch, URL mapping.
+- **Route and permission tests** (`server/src/__tests__/distribution-routes.test.ts`): multi-tenant isolation (403), Zod validation.
+- **End-to-end PostgreSQL smoke test** (`scripts/verification/distribution-smoke.ts`): full distribution cycle against a real PostgreSQL instance, blocking of `draft` content (governance violation), switch to `published`, audit log entry and cross-company isolation.

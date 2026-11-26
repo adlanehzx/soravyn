@@ -1,17 +1,19 @@
 # SORAVYN
 
-Autonomous Creative Intelligence — votre agence marketing et studio de production.
+![Verify](https://github.com/adlanehzx/soravyn/actions/workflows/verify.yml/badge.svg)
 
-## Développement local
+Autonomous Creative Intelligence — your marketing agency and production studio.
 
-Node.js 22+ et pnpm requis.
+## Local development
+
+Node.js 22+ and pnpm are required.
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-Le serveur et le dashboard partagent http://localhost:3200. PostgreSQL embarqué est utilisé sans DATABASE_URL. Le mode local donne le contrôle opérateur : ne pas exposer ce mode sur Internet.
+The server and the dashboard share http://localhost:3200. Embedded PostgreSQL is used when `DATABASE_URL` is not set. Local mode grants operator control: do not expose this mode to the Internet.
 
 ```sh
 pnpm -r typecheck
@@ -19,22 +21,22 @@ pnpm test:run
 pnpm build
 ```
 
-## État du produit
+## Product status
 
-La coordination des agents provient du socle conservé. Un worker vidéo séparé produit désormais des MP4 HyperFrames depuis des scènes explicites, avec fichiers intermédiaires, validation humaine et livraison de campagne. Un rendu local réel a été vérifié. La voix locale eSpeak, les images client, les révisions de scènes et la bibliothèque sont intégrées. Le connecteur de scripts Ollama exige un modèle local configuré ; un pack complet a été généré et vérifié avec le modèle local Qwen2.5 1.5B via Ollama, sans fournisseur payant. La gouvernance a été contrôlée dans Chromium à 1280 et 390 px ; la vérification navigateur complète reste partielle. Voir doc/VIDEO_WORKER.md pour les commandes et limites.
+Agent coordination comes from the retained base. A separate video worker now produces HyperFrames MP4s from explicit scenes, with intermediate files, human approval and campaign delivery. A real local render has been verified. The local eSpeak voice, client images, scene revisions and the library are integrated. The Ollama script connector requires a configured local model; a complete pack was generated and verified with the local Qwen2.5 1.5B model through Ollama, without any paid provider. Governance was checked in Chromium at 1280 and 390 px; the full browser verification remains partial. See doc/VIDEO_WORKER.md for the commands and limits.
 
-Documentation : [guide des documents](doc/README.md). Architecture : [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md).
+Documentation: [documentation guide](doc/README.md). Architecture: [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md).
 
-Licences et attributions : THIRD_PARTY_NOTICES.md et LICENSE.
+Licenses and attributions: THIRD_PARTY_NOTICES.md and LICENSE.
 
-## Workflow de campagne
+## Campaign workflow
 
-Campaign Studio relie désormais les tâches des agents, les versions de stratégie/script/storyboard, les validations et les corrections au rendu vidéo. Le planning manuel, les mesures sourcées et le rapport client complètent la livraison. Voir doc/CAMPAIGN_WORKFLOW.md et doc/verification/campaign-workflow-summary.md pour les limites et preuves de vérification.
+Campaign Studio now links agent tasks, strategy/script/storyboard versions, approvals and corrections to the video render. Manual scheduling, sourced metrics and the client report complete the delivery. See doc/CAMPAIGN_WORKFLOW.md for the limits.
 
-Les extensions du studio (packs créatifs locaux, textes marketing, marque, déclinaisons, portail client, budgets et audio) sont décrites avec leurs limites dans [doc/STUDIO_EXTENSIONS.md](doc/STUDIO_EXTENSIONS.md).
+The studio extensions (local creative packs, marketing copy, brand, variations, client portal, budgets and audio) are described with their limits in [doc/STUDIO_EXTENSIONS.md](doc/STUDIO_EXTENSIONS.md).
 
-Les reprises par étape, les trois compositions vidéo et les aperçus isolés sont documentés dans [doc/PRODUCTION_RELIABILITY.md](doc/PRODUCTION_RELIABILITY.md).
+Step-by-step resumption, the three video compositions and isolated previews are documented in [doc/PRODUCTION_RELIABILITY.md](doc/PRODUCTION_RELIABILITY.md).
 
-Le contrôle des agents, les rôles, les reprises de tâches, les budgets réconciliés et les sauvegardes sont décrits dans [doc/GOVERNANCE.md](doc/GOVERNANCE.md), avec leurs limites explicites.
+Agent control, roles, task resumption, reconciled budgets and backups are described in [doc/GOVERNANCE.md](doc/GOVERNANCE.md), with their explicit limits.
 
-Le [connecteur Google Flow local expérimental](doc/FLOW_CONNECTOR.md) ajoute une file et un worker navigateur. Une première génération Flow réelle a été vérifiée et importée. Le parcours complet du worker automatique reste à valider séparément.
+The [experimental local Google Flow connector](doc/FLOW_CONNECTOR.md) adds a queue and a browser worker. A first real Flow generation was verified and imported. The full automatic worker path remains to be validated separately.

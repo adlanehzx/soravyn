@@ -3,25 +3,25 @@ title: SORAVYN
 summary: Autonomous Creative Intelligence — marketing operations and creative production
 ---
 
-SORAVYN réunit la gestion des clients, les campagnes marketing, le pilotage d’agents et la production vidéo dans une application.
+SORAVYN brings client management, marketing campaigns, agent orchestration and video production together in a single application.
 
-## Un parcours de production traçable
+## A traceable production path
 
-Créer un workspace client, définir sa marque, préparer une campagne et attribuer une tâche à un Producer. Le Video Studio produit des vidéos depuis un script de scènes relu par l’opérateur. Les rendus et leurs fichiers intermédiaires sont conservés, puis un humain approuve ou refuse le livrable avant livraison.
+Create a client workspace, define its brand, prepare a campaign and assign a task to a Producer. Video Studio produces videos from a scene script reviewed by the operator. Renders and their intermediate files are kept, then a human approves or rejects the deliverable before delivery.
 
-## Capacités disponibles
+## Available capabilities
 
-- Profils de marque et campagnes avec transitions explicites.
-- Agents configurables, tâches, exécutions, budgets et journal d’activité.
-- Rendu HyperFrames isolé, formats sociaux, images du client et voix eSpeak locale.
-- Révisions visuelles par scène, historique et comparaison de versions.
-- Bibliothèque privée de vidéos, images et fichiers de production.
-- Approbations humaines et contrôle d’accès côté serveur.
+- Brand profiles and campaigns with explicit transitions.
+- Configurable agents, tasks, runs, budgets and an activity log.
+- Isolated HyperFrames rendering, social formats, client images and a local eSpeak voice.
+- Per-scene visual revisions, history and version comparison.
+- Private library of videos, images and production files.
+- Human approvals and server-side access control.
 
-## Limites actuelles
+## Current limits
 
-Le parcours complet de création autonome par agents reste à valider avec un modèle configuré. Le connecteur de script Ollama local nécessite un modèle installé ; il propose un brouillon à relire avant rendu. La voix premium, la musique, les médias stock automatiques et les sous-titres au mot ne sont pas livrés. Aucune publication sociale automatique.
+The full autonomous creation path by agents remains to be validated with a configured model. The local Ollama script connector requires an installed model; it proposes a draft to be reviewed before rendering. Premium voice, music, automatic stock media and word-level subtitles are not delivered. There is no automatic social publishing.
 
-## Démarrer
+## Get started
 
-Suivre le [guide local](/start/quickstart). Le mode local donne le contrôle opérateur et reste réservé à la machine locale. Une ouverture à plusieurs clients exige un déploiement authentifié et les vérifications décrites dans la documentation de déploiement.
+Follow the [local guide](/start/quickstart). Local mode grants operator control and stays reserved for the local machine. Opening it to several clients requires an authenticated deployment and the checks described in the deployment documentation.

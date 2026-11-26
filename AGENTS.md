@@ -1,13 +1,13 @@
-# Contribution à SORAVYN
+# Contributing to SORAVYN
 
-Lire `README.md`, `doc/README.md`, `doc/SPEC-implementation.md` et les guides concernés avant une modification.
+Read `README.md`, `doc/README.md`, `doc/SPEC-implementation.md` and the relevant guides before making a change.
 
-- Garder les données et les permissions isolées par company côté serveur.
-- Synchroniser schémas, migrations, contrats partagés, API et interface.
-- Préserver le checkout atomique des tâches, les validations humaines, les budgets et le journal d’audit.
-- Exécuter les rendus dans le worker isolé, jamais dans le processus HTTP.
-- Ne pas exposer de secrets ni présenter des résultats simulés comme réels.
-- Préserver les licences et notices de tiers.
-- Générer les migrations avec `pnpm db:generate` ; ne pas réécrire les migrations appliquées.
+- Keep data and permissions isolated per company on the server side.
+- Keep schemas, migrations, shared contracts, API and interface in sync.
+- Preserve atomic task checkout, human approvals, budgets and the audit log.
+- Run renders in the isolated worker, never in the HTTP process.
+- Do not expose secrets or present simulated results as real ones.
+- Preserve third-party licenses and notices.
+- Generate migrations with `pnpm db:generate`; do not rewrite applied migrations.
 
-Avant livraison : `pnpm -r typecheck`, `pnpm test:run`, `pnpm build`. Rapporter les contrôles réellement exécutés et leurs limites.
+Before delivery: `pnpm -r typecheck`, `pnpm test:run`, `pnpm build`. Report the checks actually run and their limits.

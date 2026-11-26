@@ -1,50 +1,44 @@
-# SORAVYN — Lot 5 : Génération Storyboard IA Multimodal & Bridge Studio Vidéo
+# SORAVYN — AI multimodal storyboard generation and Video Studio bridge
 
-## 1. Vue d'Ensemble
+## 1. Overview
 
-Le **Lot 5** établit le pont autonome entre :
-1. **La Mémoire de Marque (Lot 2)** : personas cibles, produits & propositions de valeur, objections traitées avec preuves vérifiables.
-2. **Le Plan Marketing (Lot 3)** & **Le Calendrier Éditorial Omnicanal (Lot 4)** : propositions créatives, formats, accroches et dates de diffusion.
-3. **Le Studio Vidéo Docker & HyperFrames (Lot 1)** : worker isolé, composition GSAP, synthèse vocale locale, rendu MP4 validé et extraction des sous-titres SRT.
-
----
-
-## 2. Architecture & Composants
-
-### 2.1 Synthèse de Storyboard Multimodal (`server/src/services/storyboard-generator.ts`)
-- **Structure Narrative Calibrée** : 4 scènes consécutives totalisant 24 secondes :
-  1. **Scène 1 : Hook (5s)** — Accroche percutante alignée sur l'audience cible et le canal.
-  2. **Scène 2 : Problème / Friction (6s)** — Formulation de l'objection ou de la friction identifiée dans la Mémoire de Marque.
-  3. **Scène 3 : Solution & Offre (8s)** — Démonstration de la proposition de valeur du produit de la marque.
-  4. **Scène 4 : Appel à l'Action / CTA (5s)** — Clôture engageante vers la conversion.
-- **Sous-titres Synchronisés (`captionCues`)** : Calcul des marqueurs temporels `[startMs, endMs]` pour la génération du fichier `.srt`.
-- **Résolution Automatique de Plateforme** : `tiktok`, `reels`, `shorts` (9:16 vertical), `youtube` (16:9 paysage), ou `square` (1:1).
-
-### 2.2 Endpoints API (`server/src/routes/video-storyboard.ts`)
-- `POST /api/companies/:companyId/studio/video/preview-storyboard` : simulation et inspection du storyboard sans déclencher de rendu lourd.
-- `POST /api/companies/:companyId/studio/video/generate-from-proposal` : génération du storyboard, mise en file d'attente du job vidéo (`studio_video_jobs`), et bascule du créneau éditorial en `status: "in_production"`.
-- `GET /api/companies/:companyId/studio/video/proposals` : liste filtrée des propositions marketing éligibles au format vidéo.
-
-### 2.3 Synchronisation Asynchrone & Post-Production
-- **Rendu Terminé (`server/src/video-worker.ts`)** : Le worker notifie la fin du rendu et met à jour l'élément du calendrier éditorial lié en statut `ready_for_review` avec l'URL de téléchargement MP4 dans `publishedUrl`.
-- **Gouvernance & Validation (`server/src/routes/approvals.ts`)** : Lorsque le décideur approuve la vidéo, le créneau du calendrier bascule automatiquement en `approved`.
-
-### 2.4 Interface Utilisateur (`ui/src/components/EditorialCalendarPanel.tsx`)
-- Détection automatique des éléments vidéo au calendrier.
-- Bouton interactif `🎬 IA Storyboard & Rendu` ouvrant une modale de configuration (plateforme, template, narration).
-- Prévisualisation instantanée du scénario des 4 scènes et des répliques voix off.
-- Badge animé `⚙️ Rendu en cours...` pendant l'exécution du worker Docker.
-- Lecteur vidéo HTML5 intégré avec boutons de téléchargement d'actifs MP4 une fois prêt.
+This module establishes the autonomous bridge between:
+1. **The Brand Memory**: target personas, products and value propositions, handled objections with verifiable proof.
+2. **The Marketing Plan** and **the omnichannel Editorial Calendar**: creative proposals, formats, hooks and publication dates.
+3. **The Docker and HyperFrames Video Studio**: isolated worker, GSAP composition, local speech synthesis, validated MP4 render and SRT subtitle extraction.
 
 ---
 
-## 3. Matrice de Vérification Réalisée
+## 2. Architecture and components
 
-- **Tests unitaires (`server/src/__tests__/storyboard-generator.test.ts`)** : 9/9 tests validés.
-- **Suite globale vitest** : **281/281 tests passés** à 100% sans aucun mock cassé.
-- **Typecheck global (`pnpm -r typecheck`)** : 0 erreur sur l'ensemble des 13 packages.
-- **Build monorepo (`pnpm -r build`)** : Bundle Vite UI & exécutable Node compilés avec succès.
-- **Smoke Test E2E PostgreSQL (`scripts/verification/video-storyboard-smoke.ts`)** :
-  - Cycle complet de bout en bout exécuté sur instance PostgreSQL réelle.
-  - Vérification du respect strict du partitionnement multitenant (rejet 404 sur les requêtes cross-entreprises).
-  - Preuve enregistrée dans `doc/verification/video-storyboard.json`.
+### 2.1 Multimodal storyboard synthesis (`server/src/services/storyboard-generator.ts`)
+- **Calibrated narrative structure**: 4 consecutive scenes totaling 24 seconds:
+  1. **Scene 1: Hook (5s)**: a punchy hook aligned with the target audience and the channel.
+  2. **Scene 2: Problem / Friction (6s)**: formulation of the objection or friction identified in the Brand Memory.
+  3. **Scene 3: Solution and Offer (8s)**: demonstration of the brand's product value proposition.
+  4. **Scene 4: Call to Action / CTA (5s)**: an engaging close towards conversion.
+- **Synchronized subtitles (`captionCues`)**: computation of the `[startMs, endMs]` time markers for generating the `.srt` file.
+- **Automatic platform resolution**: `tiktok`, `reels`, `shorts` (9:16 vertical), `youtube` (16:9 landscape), or `square` (1:1).
+
+### 2.2 API endpoints (`server/src/routes/video-storyboard.ts`)
+- `POST /api/companies/:companyId/studio/video/preview-storyboard`: simulation and inspection of the storyboard without triggering a heavy render.
+- `POST /api/companies/:companyId/studio/video/generate-from-proposal`: generates the storyboard, queues the video job (`studio_video_jobs`), and switches the editorial slot to `status: "in_production"`.
+- `GET /api/companies/:companyId/studio/video/proposals`: filtered list of the marketing proposals eligible for the video format.
+
+### 2.3 Asynchronous synchronization and post-production
+- **Render finished (`server/src/video-worker.ts`)**: the worker signals the end of the render and updates the linked editorial calendar item to `ready_for_review` status, with the MP4 download URL in `publishedUrl`.
+- **Governance and approval (`server/src/routes/approvals.ts`)**: when the decision maker approves the video, the calendar slot automatically switches to `approved`.
+
+### 2.4 User interface (`ui/src/components/EditorialCalendarPanel.tsx`)
+- Automatic detection of the video items in the calendar.
+- Interactive `🎬 AI Storyboard & Render` button opening a configuration modal (platform, template, narration).
+- Instant preview of the 4-scene scenario and the voice-over lines.
+- Animated `⚙️ Rendering...` badge while the Docker worker is running.
+- Built-in HTML5 video player with MP4 asset download buttons once ready.
+
+---
+
+## 3. Tests
+
+- **Unit tests** (`server/src/__tests__/storyboard-generator.test.ts`).
+- **End-to-end PostgreSQL smoke test** (`scripts/verification/video-storyboard-smoke.ts`): full cycle against a real PostgreSQL instance, including strict multi-tenant partitioning (404 rejection of cross-company requests).
