@@ -1,9 +1,0 @@
-{
-  "passed": true,
-  "checks": [
-    "declared fixture cost reduces unspent reservation without double counting",
-    "renewal authorizes future spending plus already reported cost",
-    "oversubscribed renewal rejected"
-  ],
-  "realProviderBilling": false
-}

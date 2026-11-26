@@ -1,55 +1,45 @@
-# Extensions du studio
+# Studio extensions
 
-## Lots livrés
+## Delivered features
 
-1. **Pack créatif local** : jobs persistés, quatre étapes observables (stratégie, script, storyboard, textes), réponses structurées validées. Depuis Campaign Studio, les brouillons sont soumis aux étapes existantes dans leur ordre. La validation humaine reste obligatoire. Configurer `SORAVYN_OLLAMA_MODEL` et éventuellement `SORAVYN_OLLAMA_URL` sur l’API et le worker ; seul un endpoint local HTTP est accepté. Pas de nouvel appel cloud payant.
-2. **Textes marketing** : rédaction, import des propositions du pack, validation/refus commenté et nouvelle version reliée à la précédente. Textes consultables et téléchargeables dans Content Library ; aucune publication externe.
-3. **Brand Kit** : couleurs, langues, trois familles typographiques locales, règles éditoriales et logo PNG/JPEG/WebP avec mention des droits. L’API vérifie la propriété du logo et le worker vérifie son intégrité avant décodage isolé. Les workflows figent ces données ; modifier la marque ne réécrit pas les campagnes démarrées.
-4. **Déclinaisons vidéo** : source approuvée, choix du format, sélection ordonnée des scènes et nouvelle accroche visuelle. Nouvelle production et nouvelle validation. Une déclinaison ne remplace pas la vidéo courante d’un workflow. Durée totale minimale de 5 secondes conformément au contrat du moteur ; maximum 90 secondes. Le rendu est complet, pas un calcul partiel de frames. Les timings personnalisés sont retirés lors d’une sélection de scènes.
-5. **Commentaires timecodés et portail client** : position vérifiée dans la scène, tâche de correction facultative côté opérateur. Liens de revue limités à une vidéo, valables 1 à 14 jours, révocables ; jetons aléatoires stockés uniquement sous forme de hash. Le secret du lien reste dans le fragment navigateur et est transmis par en-tête masqué dans les logs. Le client ne voit ni les notes internes ni l’administration. Un lien permet une décision ; le refus crée une tâche sans exécuter de modèle. L’accord client est distinct de l’approbation interne. Une vidéo de workflow remplacée n’est plus accessible par son ancien lien.
-6. **Budget et diagnostic** : enveloppe de campagne, montants réservés transactionnellement avant autorisation des tâches, coûts déclarés et libération manuelle après revue/fin de tâche. Diagnostic de base, stockage, modèle local, Docker, image de rendu et signal du worker récent.
-7. **Voix et sous-titres** : préécoute WAV réelle avec eSpeak en conteneur isolé, débit/hauteur et remplacements littéraux de prononciation. Timings personnalisés, par mot ou phrase, contrôlés, exportés en SRT et affichés dans le rendu. Sans timings personnalisés, les sous-titres SRT suivent les scènes.
+1. **Local creative pack**: persisted jobs, four observable steps (strategy, script, storyboard, texts), validated structured answers. From Campaign Studio, drafts are submitted to the existing steps in their order. Human approval remains mandatory. Configure `SORAVYN_OLLAMA_MODEL` and optionally `SORAVYN_OLLAMA_URL` on the API and the worker; only a local HTTP endpoint is accepted. No new paid cloud call.
+2. **Marketing texts**: writing, import of the pack's proposals, approval/rejection with comment, and a new version linked to the previous one. Texts can be viewed and downloaded in Content Library; no external publication.
+3. **Brand Kit**: colors, languages, three local font families, editorial rules and a PNG/JPEG/WebP logo with a rights statement. The API checks logo ownership and the worker checks its integrity before isolated decoding. Workflows freeze this data; changing the brand does not rewrite campaigns already started.
+4. **Video variations**: approved source, format choice, ordered scene selection and a new visual hook. New production and new approval. A variation does not replace a workflow's current video. Minimum total duration of 5 seconds in line with the engine contract; maximum 90 seconds. Rendering is complete, not a partial frame computation. Custom timings are removed when scenes are selected.
+5. **Timecoded comments and client portal**: position checked within the scene, optional correction task on the operator side. Review links limited to one video, valid for 1 to 14 days, revocable; random tokens stored only as hashes. The link secret stays in the browser fragment and is sent through a header that is masked in the logs. The client sees neither the internal notes nor the administration. A link allows one decision; a rejection creates a task without running a model. Client agreement is distinct from internal approval. A replaced workflow video is no longer accessible through its old link.
+6. **Budget and diagnostics**: campaign envelope, amounts reserved transactionally before tasks are authorized, declared costs and manual release after review/end of task. Basic diagnostics for storage, local model, Docker, render image and recent worker signal.
+7. **Voice and subtitles**: real WAV preview with eSpeak in an isolated container, speed/pitch and literal pronunciation replacements. Custom timings, per word or sentence, checked, exported as SRT and shown in the render. Without custom timings, the SRT subtitles follow the scenes.
 
-## Limites explicites
+## Explicit limits
 
-- Un modèle Ollama réel n’a pas été exécuté durant la vérification : le serveur HTTP de modèle est une fixture. Le chemin réel de génération dépend d’un modèle local installé, de ses capacités et des ressources disponibles.
-- Pas de voix premium ni d’alignement automatique mot à mot. Les timings personnalisés sont saisis manuellement. Pas de musique ajoutée par ce lot.
-- Le budget vérifie aussi les exécutions génériques d’agents rattachées à une campagne plafonnée. Seule la part non consommée des réservations s’ajoute aux coûts remontés ; une autorisation peut être renouvelée. Il ne plafonne pas directement la facture du fournisseur. Voir GOVERNANCE.md.
-- Le portail est un accès par possession d’un lien privé, pas un compte nominatif avec authentification forte. Il reste soumis à la configuration réseau de l’instance. Toute personne possédant le lien peut donner un avis ; révoquer le lien en cas de fuite.
-- Le signal du worker repose sur un fichier du stockage partagé, actualisé toutes les dix secondes et considéré récent pendant trente secondes. C’est un diagnostic d’activité, pas une garantie de rendu ni un ordonnanceur distribué.
-- La liste des packs est limitée aux 100 jobs récents de la campagne, celle des textes de bibliothèque à 200 éléments. Pas de pagination dans ce lot.
-- Aucun test navigateur responsive n’a été exécuté pour ces nouveaux panneaux. TypeScript/build et tests HTTP ne remplacent pas une revue visuelle.
+- A real Ollama model was not run during verification: the HTTP model server is a fixture. The real generation path depends on an installed local model, its capabilities and the available resources.
+- No premium voice and no automatic word-by-word alignment. Custom timings are entered manually. No music added by this release.
+- The budget also checks generic agent runs attached to a capped campaign. Only the unconsumed part of the reservations is added to the costs reported; an authorization can be renewed. It does not directly cap the provider's invoice. See GOVERNANCE.md.
+- The portal is access by possession of a private link, not a named account with strong authentication. It remains subject to the instance's network configuration. Anyone holding the link can give an opinion; revoke the link in case of a leak.
+- The worker signal relies on a file in the shared storage, refreshed every ten seconds and considered recent for thirty seconds. It is an activity diagnostic, not a render guarantee nor a distributed scheduler.
+- The list of packs is limited to the campaign's 100 most recent jobs, and the library texts list to 200 items. No pagination in this release.
+- No responsive browser test was run for these new panels. TypeScript/build and HTTP tests do not replace a visual review.
 
-## Vérification reproductible
+## Reproducible verification
 
 ```sh
-pnpm db:generate             # seulement après une modification du schéma
+pnpm db:generate             # only after a schema change
 pnpm -r typecheck
 pnpm test:run
 pnpm build
 ```
 
-Le script `scripts/verification/studio-extensions-smoke.mjs` attend une API locale démarrée ainsi, dans un terminal dédié :
+The script `scripts/verification/studio-extensions-smoke.mjs` expects a local API started like this, in a dedicated terminal:
 
 ```sh
 PORT=3203 SORAVYN_OLLAMA_MODEL=soravyn-fixture \
 SORAVYN_OLLAMA_URL=http://127.0.0.1:11435 pnpm dev:once
 ```
 
-Puis exécuter dans un autre terminal :
+Then run in another terminal:
 
 ```sh
 node scripts/verification/studio-extensions-smoke.mjs
 ```
 
-Le script démarre un serveur de modèle simulé sur le port 11435 et des workers `--once` limités à son client de vérification avec `SORAVYN_VIDEO_COMPANY_ID`. Éviter qu’un worker global traite simultanément ces jobs de test. Il crée des clients et artefacts de vérification ; il ne supprime aucune donnée existante. Docker, l’image `soravyn-video:0.6.91` et ffprobe sont nécessaires. Le résultat détaillé est écrit dans `/tmp/soravyn-extensions-proof.json`.
-
-## Résultats exécutés dans cette installation
-
-- Migration `0032_cooing_overlord.sql` générée avec Drizzle puis appliquée à la base locale.
-- Typecheck complet réussi.
-- 224 tests dans 55 fichiers réussis.
-- Build complet réussi ; avertissement conservé sur la taille des bundles UI et dépréciation Node de `module.register()`.
-- Le script HTTP d’intégration a réussi : logo normalisé dans le rendu réel, isolation client, pack de quatre générations simulées, textes versionnés, réservations budgétaires, validations, commentaires positionnés, portail restreint, refus client, décision unique, révocation, déclinaison 1920×1080 avec piste audio et préécoute WAV.
-- La preuve machine est conservée dans [verification/studio-extensions.json](verification/studio-extensions.json). Aucun jeton de revue ou clé d’agent n’y figure.
-- Les essais initiaux ont identifié un ancien worker qui récupérait les jobs de test et la contrainte moteur de durée minimale ; la vérification finale utilise un worker limité à son client et une durée conforme.
+The script starts a simulated model server on port 11435 and `--once` workers limited to its verification client with `SORAVYN_VIDEO_COMPANY_ID`. Avoid having a global worker process these test jobs at the same time. It creates verification clients and artifacts; it deletes no existing data. Docker, the `soravyn-video:0.6.91` image and ffprobe are required. The detailed result is written to `/tmp/soravyn-extensions-proof.json`.

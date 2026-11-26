@@ -1,43 +1,43 @@
-# Connecteur Google Flow local — expérimental
+# Local Google Flow connector — experimental
 
-Ce connecteur pilote l'interface web de Flow depuis un worker distinct, avec un profil Chromium dédié à chaque client. Il ne s'agit pas d'une API Google et aucun droit API n'est déduit de l'abonnement Ultra. Les conditions Google restent applicables : https://policies.google.com/terms . Aucun mécanisme de contournement de CAPTCHA, de restrictions d'accès ou d'authentification n'est inclus.
+This connector drives Flow's web interface from a separate worker, with a Chromium profile dedicated to each client. It is not a Google API and no API right is inferred from the Ultra subscription. Google's terms still apply: https://policies.google.com/terms . No mechanism to bypass CAPTCHAs, access restrictions or authentication is included.
 
-## État réel
+## Actual state
 
-Implémentés : file PostgreSQL, autorisation humaine de crédits par job, isolation des références client/campagne, suivi des étapes, téléchargement MP4 après vérification, commandes de connexion et de worker, écran dans Video Studio réservé aux administrateurs. Une interruption après armement du clic ne provoque jamais une seconde soumission automatique. Les jobs en attente peuvent être annulés ; une annulation locale n'annule pas une génération déjà soumise à Google.
+Implemented: PostgreSQL queue, per-job human authorization of credits, isolation of client/campaign references, step tracking, MP4 download after verification, login and worker commands, and a Video Studio screen reserved for administrators. An interruption after the click is armed never causes an automatic second submission. Pending jobs can be cancelled; a local cancellation does not cancel a generation already submitted to Google.
 
-Mise à jour : une génération Google réelle a ensuite été autorisée pour un maximum de 10 crédits et réalisée. Voir le bilan du test réel ci-dessous. La file initiale a été vérifiée sans dépense. La connexion manuelle et l'inspection authentifiée ont ensuite été réalisées ; les sélecteurs de l'adaptateur agent proviennent de cette inspection. Les tests locaux de la file prouvent la persistance et l'arrêt avant consommation ; le test réel Google est une preuve séparée. Les clips sont téléchargés dans le panneau Flow ; leur insertion dans la composition HyperFrames, les approbations et le portail client ne sont pas encore intégrées.
+Update: a real Google generation was then authorized for a maximum of 10 credits and carried out. See the real-test summary below. The initial queue was verified without spending anything. Manual login and authenticated inspection were then carried out; the agent adapter's selectors come from that inspection. The local queue tests prove persistence and stopping before consumption; the real Google test is separate evidence. Clips are downloaded into the Flow panel; their insertion into the HyperFrames composition, approvals and the client portal are not integrated yet.
 
-## Connexion et prérequis
+## Login and requirements
 
-L'API doit fonctionner pour le PostgreSQL embarqué. Installer Chromium et FFprobe, utiliser la même base et le même SORAVYN_VIDEO_ROOT pour l'API et le worker. Le worker est local, avec interface graphique par défaut. Ne pas exposer le profil ni son répertoire par HTTP. Aucun cookie, mot de passe ou token n'est copié dans la base ou les logs applicatifs.
+The API must be running for the embedded PostgreSQL. Install Chromium and FFprobe, and use the same database and the same SORAVYN_VIDEO_ROOT for the API and the worker. The worker is local, with a graphical interface by default. Do not expose the profile or its directory over HTTP. No cookie, password or token is copied into the database or the application logs.
 
 ```sh
-pnpm flow:login --company UUID_DU_CLIENT
-# Se connecter soi-même dans la fenêtre Chromium standard dédiée puis la fermer.
-SORAVYN_FLOW_ENABLED=true pnpm flow:worker --company UUID_DU_CLIENT
+pnpm flow:login --company CLIENT_UUID
+# Log in yourself in the dedicated standard Chromium window, then close it.
+SORAVYN_FLOW_ENABLED=true pnpm flow:worker --company CLIENT_UUID
 ```
 
-Une seule commande connexion/worker peut posséder ce profil. Le verrou `browser.lock` reste en place après un crash brutal : arrêter tout processus propriétaire, contrôler les jobs et Flow avant de retirer manuellement ce répertoire. Ne pas supprimer le profil pour déverrouiller.
+Only one login/worker command can own this profile. The `browser.lock` lock stays in place after a hard crash: stop any owning process and check the jobs and Flow before removing this directory by hand. Do not delete the profile to unlock it.
 
-## Calibration opérateur
+## Operator calibration
 
-Créer un fichier privé `SORAVYN_VIDEO_ROOT/flow/UUID_DU_CLIENT/recipe.json` après inspection réelle du projet connecté. Pour le mode direct historique, ce fichier doit contenir les propriétés suivantes, validées strictement (le schéma agent est décrit plus bas) :
+Create a private file `SORAVYN_VIDEO_ROOT/flow/CLIENT_UUID/recipe.json` after a real inspection of the connected project. For the historical direct mode, this file must contain the following properties, strictly validated (the agent schema is described below):
 
-- `projectUrl` : URL HTTPS Google Flow sans paramètres ni credentials.
-- `ready`, `prompt`, `submit`, `price`, `settings`, `download` : sélecteurs Playwright inspectés dans cette interface.
-- `priceText` : texte exact du coût visible ; `credits` : son coût total vérifié pour un seul clip.
-- `settingsText` : texte exact vérifié contenant le modèle, le format et le nombre de résultats attendus.
-- `blockers` : sélecteurs réels des écrans de connexion, consentement ou challenge à surveiller.
-- `reviewedAt` : date ISO de vérification, valide au plus sept jours.
+- `projectUrl`: Google Flow HTTPS URL without parameters or credentials.
+- `ready`, `prompt`, `submit`, `price`, `settings`, `download`: Playwright selectors inspected in this interface.
+- `priceText`: exact text of the visible cost; `credits`: its verified total cost for a single clip.
+- `settingsText`: exact verified text containing the model, the format and the expected number of results.
+- `blockers`: real selectors of the login, consent or challenge screens to watch.
+- `reviewedAt`: ISO date of verification, valid for at most seven days.
 
-Aucun exemple de sélecteur n'est fourni comme s'il était fiable. Utiliser un projet vide : si un téléchargement existe déjà, le job s'arrête pour éviter d'importer un ancien résultat. La création automatique de nouveaux projets et le traitement de plusieurs résultats restent à calibrer/développer ; ce connecteur ne garantit donc pas encore une chaîne de générations sans intervention.
+No selector example is provided as if it were reliable. Use an empty project: if a download already exists, the job stops to avoid importing an old result. Automatic creation of new projects and handling of several results remain to be calibrated/developed; this connector therefore does not yet guarantee a chain of generations without intervention.
 
-Le texte du prix et des réglages doit correspondre exactement à la calibration. Le worker exige un seul résultat téléchargeable. Il ne lit pas le solde global du compte : l'enveloppe autorisée ne garantit pas le montant réellement facturé par Google ni un plafond entre plusieurs applications. Les nouvelles dépenses requièrent un nouveau job explicitement autorisé.
+The price and settings text must match the calibration exactly. The worker requires a single downloadable result. It does not read the account's overall balance: the authorized envelope does not guarantee the amount actually billed by Google nor a cap across several applications. New spending requires a new, explicitly authorized job.
 
-Le statut `submission_uncertain` exige une réconciliation humaine dans Flow. Il n'y a pas de bouton de relance automatique pour ce cas. Après reconnexion ou calibration, seuls les jobs arrêtés avant soumission peuvent reprendre.
+The `submission_uncertain` status requires human reconciliation in Flow. There is no automatic retry button for this case. After reconnection or calibration, only jobs stopped before submission can resume.
 
-## Vérifications
+## Verification
 
 ```sh
 pnpm -r --workspace-concurrency=1 typecheck
@@ -46,50 +46,22 @@ pnpm build
 SORAVYN_TEST_URL=http://127.0.0.1:3207 node scripts/verification/flow-smoke.mjs
 ```
 
-Le smoke test crée deux clients de vérification et ne lance aucun navigateur Google. Son worker s'arrête sur l'absence de recette ; cette preuve est distincte d'une génération réelle. Voir `doc/verification/flow-connector.json`.
+The smoke test creates two verification clients and launches no Google browser. Its worker stops on the absence of a recipe; this proof is distinct from a real generation.
 
-La commande de connexion lance Chromium normalement, sans Playwright ni CDP. Google peut néanmoins refuser ce navigateur ou une automatisation ultérieure. Aucun paramètre de camouflage ou contournement n’est ajouté. Si le refus persiste, arrêter cette voie et utiliser Flow manuellement ou une API officiellement prise en charge.
+The login command launches Chromium normally, without Playwright or CDP. Google may nevertheless refuse this browser or later automation. No camouflage or bypass parameter is added. If the refusal persists, stop this path and use Flow manually or an officially supported API.
 
-## Inspection authentifiée du 16 novembre 2026
+## Authenticated inspection of 16 November 2026
 
-La connexion manuelle a réussi. L'interface observée est Flow Agent : une proposition
-conversationnelle annonce Veo 3.1 Lite, 8 secondes, 16:9, 720p et 10 crédits,
-puis demande confirmation. Le réglage « Toujours » demander confirmation est activé.
-Aucune génération vidéo Google n'a été déclenchée à ce stade.
+Manual login succeeded. The interface observed is Flow Agent: a conversational proposal announces Veo 3.1 Lite, 8 seconds, 16:9, 720p and 10 credits, then asks for confirmation. The "Always" ask-for-confirmation setting is enabled. No Google video generation was triggered at this stage.
 
-Cette interface nécessite un parcours en plusieurs étapes (proposition, confirmation,
-génération, téléchargement) qui n'est pas couvert par la recette directe historique. Un adaptateur dédié a été
-ajouté ensuite (voir ci-dessous) ; le simple succès de connexion ne valide pas le
-worker autonome. Le projet et les éléments d'inspection restent dans le
-stockage privé local, hors dépôt.
+This interface requires a multi-step path (proposal, confirmation, generation, download) that is not covered by the historical direct recipe. A dedicated adapter was added afterwards (see below); a successful login alone does not validate the autonomous worker. The project and the inspection items stay in local private storage, outside the repository.
 
-## Test réel autorisé et adaptateur Flow Agent
+## Authorized real test and Flow Agent adapter
 
-Un seul clip a été approuvé dans Flow après autorisation explicite de l'utilisateur :
-une vidéo Veo 3.1 Lite pour 10 crédits affichés. Le MP4 original 720p a été téléchargé
-sans upscale : 1280 × 720, 7,93 secondes, H264/AAC, décodage FFmpeg complet réussi.
-Le clip a été importé dans une campagne SORAVYN et son téléchargement HTTP vérifié.
-Le montant effectivement débité n'a pas été réconcilié avec le relevé Google.
-Preuve : `verification/flow-google-real.json`. Aucune deuxième génération n'a été lancée.
+A single clip was approved in Flow after the user's explicit authorization: a Veo 3.1 Lite video for 10 displayed credits. The original 720p MP4 was downloaded without upscaling: 1280 × 720, 7.93 seconds, H264/AAC, complete FFmpeg decoding succeeded. The clip was imported into a SORAVYN campaign and its HTTP download verified. The amount actually debited was not reconciled with the Google statement. No second generation was launched.
 
-L'adaptateur `agent_confirmation` prend maintenant en charge le parcours observé :
-création d'un projet vide, vérification du mode « Toujours » et du modèle par défaut,
-saisie du brief, lecture de la permission native, refus de tout lot de plusieurs vidéos
-ou prix supérieur au maximum, puis approbation ponctuelle et téléchargement original
-720p. Il ne sélectionne jamais « Toujours approuver dans le projet ». Une recette locale
-privée peut contenir `mode`, `projectUrl`, `model`, `reviewedAt`, `blockers` ; le modèle
-calibré est strictement `Veo 3.1 - Lite`. Aucun appel à une API interne Google ni copie
-de cookies n'est utilisé. La recette directe reste disponible pour les autres interfaces.
+The `agent_confirmation` adapter now supports the observed path: creating an empty project, checking the "Always" mode and the default model, entering the brief, reading the native permission, refusing any batch of several videos or price above the maximum, then a one-off approval and the original 720p download. It never selects "Always approve in the project". A private local recipe can contain `mode`, `projectUrl`, `model`, `reviewedAt`, `blockers`; the calibrated model is strictly `Veo 3.1 - Lite`. No call to an internal Google API and no copying of cookies is used. The direct recipe remains available for other interfaces.
 
-Les garde-fous de l'adaptateur ont passé des tests avec Chromium réel sur une page HTML
-synthétique hors réseau. Ils sont distincts du test Google, exécuté par contrôle navigateur
-puis import opérateur : **le worker automatique complet n'a pas encore effectué de
-génération Google de bout en bout**. Son activation reste explicite et aucune génération
-supplémentaire n'est autorisée par le test précédent.
+The adapter's safeguards passed tests with a real Chromium on a synthetic offline HTML page. They are distinct from the Google test, run through browser control then operator import: **the full automatic worker has not yet performed an end-to-end Google generation**. Its activation remains explicit and no additional generation is authorized by the previous test.
 
-Pour récupérer un résultat déjà généré sans répéter une dépense, l'opérateur local peut
-utiliser `pnpm flow:import --company UUID --job UUID --file /chemin/clip.mp4 --observed-credits 10`.
-Le job doit être arrêté, appartenir au client, disposer d'une autorisation suffisante et
-le fichier doit passer FFprobe et un décodage complet FFmpeg. Cette commande importe
-le résultat dans le stockage privé et le rend consultable dans le panneau Flow ; elle ne
-constitue pas une validation éditoriale ni une publication.
+To recover an already generated result without repeating a spend, the local operator can use `pnpm flow:import --company UUID --job UUID --file /path/clip.mp4 --observed-credits 10`. The job must be stopped, belong to the client and have a sufficient authorization, and the file must pass FFprobe and a complete FFmpeg decode. This command imports the result into private storage and makes it viewable in the Flow panel; it is neither an editorial validation nor a publication.

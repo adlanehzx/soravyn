@@ -1,8 +1,8 @@
-# Contribuer à SORAVYN
+# Contributing to SORAVYN
 
-SORAVYN réunit les opérations marketing et la production créative dans une application.
+SORAVYN brings marketing operations and creative production together in a single application.
 
-## Installation et vérification
+## Setup and verification
 
 ```sh
 pnpm install
@@ -12,15 +12,15 @@ pnpm test:run
 pnpm build
 ```
 
-Pour le moteur vidéo : consulter doc/VIDEO_WORKER.md. Les rendus utilisent un worker séparé et une image Docker administrée.
+For the video engine, see doc/VIDEO_WORKER.md. Renders use a separate worker and a managed Docker image.
 
-## Règles de contribution
+## Contribution rules
 
-- Préserver les contrôles d’accès company côté serveur.
-- Synchroniser modèles, migrations, API et interface.
-- Réutiliser les mécanismes de tâches, budgets, approbations et journalisation.
-- Ne jamais intégrer de secret aux sources ou aux logs.
-- Documenter les capacités partielles et distinguer tests simulés et exécutions réelles.
-- Conserver les notices des composants tiers décrites dans THIRD_PARTY_NOTICES.md.
+- Preserve company access controls on the server side.
+- Keep models, migrations, API and interface in sync.
+- Reuse the existing task, budget, approval and logging mechanisms.
+- Never include a secret in sources or logs.
+- Document partial capabilities and distinguish simulated tests from real executions.
+- Keep the third-party component notices described in THIRD_PARTY_NOTICES.md.
 
-Architecture : doc/ARCHITECTURE.md. Fonctionnement et limites : doc/CAMPAIGN_WORKFLOW.md et doc/VIDEO_WORKER.md.
+Architecture: doc/ARCHITECTURE.md. Behavior and limits: doc/CAMPAIGN_WORKFLOW.md and doc/VIDEO_WORKER.md.

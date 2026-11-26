@@ -1,34 +1,28 @@
-# Documentation essentielle
+# Essential documentation
 
-## Installer et exploiter
+## Install and operate
 
-- [Développement local](DEVELOPING.md)
-- [Gouvernance, rôles, budgets et reprise des tâches](GOVERNANCE.md)
-- [Base de données](DATABASE.md)
+- [Local development](DEVELOPING.md)
+- [Governance, roles, budgets and task resumption](GOVERNANCE.md)
+- [Database](DATABASE.md)
 - [Docker](DOCKER.md)
-- [Authentification et exposition](DEPLOYMENT-MODES.md)
-- [Commandes CLI](CLI.md)
+- [Authentication and exposure](DEPLOYMENT-MODES.md)
+- [CLI commands](CLI.md)
 
-## Utiliser et comprendre le studio
+## Use and understand the studio
 
-- [Campagnes, validations et livraison](CAMPAIGN_WORKFLOW.md)
-- [Worker vidéo, prérequis et limites](VIDEO_WORKER.md)
-- [Architecture et composants réutilisés](ARCHITECTURE.md)
-- [Invariants de développement](SPEC-implementation.md)
-- [Compatibilité des installations existantes](IDENTITY_MIGRATION.md)
+- [Campaigns, approvals and delivery](CAMPAIGN_WORKFLOW.md)
+- [Video worker, requirements and limits](VIDEO_WORKER.md)
+- [Architecture and reused components](ARCHITECTURE.md)
+- [Development invariants](SPEC-implementation.md)
+- [Compatibility of existing installations](IDENTITY_MIGRATION.md)
+- [Extensions: AI creation, copy, brand, client review and budgets](STUDIO_EXTENSIONS.md)
+- [Production resumption, compositions and narration](PRODUCTION_RELIABILITY.md)
+- [Local Google Flow connector: installation, calibration and limits](FLOW_CONNECTOR.md)
 
-- [Extensions : création IA, textes, marque, revue client et budgets](STUDIO_EXTENSIONS.md)
+## References
 
-- [Reprises de production, compositions et narration](PRODUCTION_RELIABILITY.md)
+- `docs/` contains the reference site: API, adapters, operator guides and configuration.
+- Licenses and attributions remain in [LICENSE](../LICENSE) and [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
-## Vérification et références
-
-- [Bilan des vérifications du workflow](verification/campaign-workflow-summary.md)
-- [Vérification de l’identité](verification/identity-rebrand.md)
-- Les fichiers JSON dans `verification/` conservent les résultats des contrôles exécutés. Les scripts correspondants restent dans `scripts/verification/`.
-- `docs/` contient le site de référence : API, adaptateurs, guides opérateur et configuration.
-- Les licences et attributions restent dans [LICENSE](../LICENSE) et [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
-
-Les skills des agents et du moteur vidéo restent dans `skills/` et `vendor/llm-video-maker/skills/` : ils participent au fonctionnement du produit.
-
-- [Connecteur Google Flow local : installation, calibration et limites](FLOW_CONNECTOR.md)
+The agent and video-engine skills remain in `skills/` and `vendor/llm-video-maker/skills/`: they are part of how the product works.

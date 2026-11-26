@@ -1,14 +1,14 @@
-# Calendrier Éditorial & Distribution Multi-Canaux (Lot 4)
+# Editorial Calendar and Multi-Channel Distribution
 
-Le module de **Calendrier Éditorial** de **SORAVYN** assure la planification unifiée de tous les contenus marketing (vidéos, posts réseaux sociaux, newsletters/emails, articles de blog). Il s'intègre harmonieusement avec le **Générateur de Plan Marketing (Lot 3)** et les **Campagnes Studio** pour offrir une vue consolidée, chronologique et multi-canaux des diffusions programmées.
+SORAVYN's **Editorial Calendar** module provides unified planning of all marketing content (videos, social posts, newsletters/emails, blog articles). It integrates with the **Marketing Plan generator** and with **Studio campaigns** to offer a consolidated, chronological, multi-channel view of scheduled publications.
 
 ---
 
-## 1. Modèle de Données & Isolation Multi-Tenant
+## 1. Data model and multi-tenant isolation
 
-Toutes les entités du calendrier éditorial respectent l'isolation stricte par client (`company_id`) avec cascades de suppression et contrôles d'accès serveur.
+All editorial calendar entities respect strict per-client isolation (`company_id`) with deletion cascades and server-side access controls.
 
-### Table PostgreSQL : `editorial_calendar_items` (`@soravyn/db`)
+### PostgreSQL table: `editorial_calendar_items` (`@soravyn/db`)
 
 ```sql
 CREATE TABLE IF NOT EXISTS "editorial_calendar_items" (
@@ -32,72 +32,63 @@ CREATE TABLE IF NOT EXISTS "editorial_calendar_items" (
 );
 ```
 
-#### Typologies Supportées
-- **`content_type`** : `video` | `social_post` | `email` | `article` | `ad`
-- **`channel`** : `LinkedIn` | `YouTube` | `TikTok` | `Instagram` | `Twitter/X` | `Newsletter` | `Blog` | `Facebook`
-- **`status`** : `draft` ➔ `scheduled` ➔ `in_production` ➔ `ready_for_review` ➔ `approved` ➔ `published` (ou `archived`)
+#### Supported types
+- **`content_type`**: `video` | `social_post` | `email` | `article` | `ad`
+- **`channel`**: `LinkedIn` | `YouTube` | `TikTok` | `Instagram` | `Twitter/X` | `Newsletter` | `Blog` | `Facebook`
+- **`status`**: `draft` ➔ `scheduled` ➔ `in_production` ➔ `ready_for_review` ➔ `approved` ➔ `published` (or `archived`)
 
 ---
 
-## 2. Génération Automatique depuis le Plan Marketing
+## 2. Automatic generation from the Marketing Plan
 
-Le service `generateCalendarFromPlan` prend un plan marketing validé et projette automatiquement ses propositions de campagnes sur les 4 semaines du mois :
+The `generateCalendarFromPlan` service takes a validated marketing plan and automatically projects its campaign proposals over the 4 weeks of the month:
 
-1. Détection du mois cible (`YYYY-MM`).
-2. Calcul des créneaux horaires optimaux par canal :
-   - **LinkedIn** : 09:00 UTC (pic d'engagement B2B)
-   - **YouTube** : 16:00 UTC
-   - **TikTok / Instagram** : 18:00 UTC
-   - **Newsletter / Email** : 10:00 UTC
-   - **Blog** : 11:00 UTC
-3. Étalement régulier des diffusions selon le numéro de semaine (`week_number`).
-4. Association automatique des `proposal_id` et conservation des métadonnées (hook, angle, CTA, budget estimé).
+1. Detection of the target month (`YYYY-MM`).
+2. Computation of the optimal time slots per channel:
+   - **LinkedIn**: 09:00 UTC (B2B engagement peak)
+   - **YouTube**: 16:00 UTC
+   - **TikTok / Instagram**: 18:00 UTC
+   - **Newsletter / Email**: 10:00 UTC
+   - **Blog**: 11:00 UTC
+3. Even spreading of publications according to the week number (`week_number`).
+4. Automatic association of the `proposal_id` and preservation of the metadata (hook, angle, CTA, estimated budget).
 
 ---
 
-## 3. Architecture API & Sécurité
+## 3. API architecture and security
 
-Toutes les routes sont préfixées par `/api/companies/:companyId/studio/calendar` et protégées par `assertCompanyAccess` :
+All routes are prefixed with `/api/companies/:companyId/studio/calendar` and protected by `assertCompanyAccess`:
 
-| Méthode | Route | Description | Validation |
+| Method | Route | Description | Validation |
 |---|---|---|---|
-| `GET` | `/` | Liste filtrée des éléments (par statut, canal, type, période) | `editorialCalendarFilterSchema` |
-| `GET` | `/stats` | Agrégation statistique temps réel (par statut, type, canal) | `periodMonth` query |
-| `GET` | `/:itemId` | Détail d'un élément du calendrier | UUID item + company check |
-| `POST` | `/` | Création manuelle d'une entrée de calendrier | `createEditorialCalendarItemSchema` |
-| `PUT` | `/:itemId` | Mise à jour des informations, statuts ou URL d'assets | `updateEditorialCalendarItemSchema` |
-| `DELETE` | `/:itemId` | Suppression d'un élément du calendrier | UUID item + company check |
-| `POST` | `/generate-from-plan` | Génération en masse à partir d'un plan marketing | `generateCalendarFromPlanSchema` |
+| `GET` | `/` | Filtered list of items (by status, channel, type, period) | `editorialCalendarFilterSchema` |
+| `GET` | `/stats` | Real-time statistical aggregation (by status, type, channel) | `periodMonth` query |
+| `GET` | `/:itemId` | Detail of a calendar item | item UUID + company check |
+| `POST` | `/` | Manual creation of a calendar entry | `createEditorialCalendarItemSchema` |
+| `PUT` | `/:itemId` | Update of information, statuses or asset URLs | `updateEditorialCalendarItemSchema` |
+| `DELETE` | `/:itemId` | Deletion of a calendar item | item UUID + company check |
+| `POST` | `/generate-from-plan` | Bulk generation from a marketing plan | `generateCalendarFromPlanSchema` |
 
 ---
 
-## 4. Interface Studio (`EditorialCalendarPanel.tsx`)
+## 4. Studio interface (`EditorialCalendarPanel.tsx`)
 
-Le panneau React `EditorialCalendarPanel` est accessible directement depuis le Studio de Campagne via l'onglet **"Calendrier éditorial"** (`calendar`) :
+The `EditorialCalendarPanel` React panel is reachable directly from Campaign Studio through the **"Editorial calendar"** tab (`calendar`):
 
-- **Vue Grille Mensuelle** : Affichage jour par jour des contenus programmés avec pastilles de canal et badges de statut.
-- **Vue Liste Chronologique** : Tri par date croissante avec détails (titre, canal, type de média, audience, campagne liée).
-- **Statistiques en En-tête** : Compteurs temps réel par type de média (Vidéos, Posts, Emails, Articles) et par statut.
-- **Générateur Intégré** : Bouton d'action pour synchroniser un plan marketing approuvé et injecter instantanément l'ensemble des contenus dans la grille.
-- **Inspecteur de Contenu** : Modal permettant de modifier les dates de diffusion, mettre à jour le statut du cycle de vie et attacher les livrables finaux (URLs des rendus vidéo, carrousels, etc.).
+- **Monthly grid view**: day-by-day display of scheduled content with channel pills and status badges.
+- **Chronological list view**: sorted by ascending date with details (title, channel, media type, audience, linked campaign).
+- **Header statistics**: real-time counters by media type (Videos, Posts, Emails, Articles) and by status.
+- **Built-in generator**: action button to synchronize an approved marketing plan and instantly inject all the content into the grid.
+- **Content inspector**: modal to change publication dates, update the lifecycle status and attach the final deliverables (video render URLs, carousels, etc.).
 
 ---
 
-## 5. Preuves de Vérification & Tests
+## 5. Tests
 
-### Tests Automatisés
-- **Tests unitaires de service** : `server/src/__tests__/editorial-calendar.test.ts` (4/4 passés).
-- **Tests d'intégration des routes** : `server/src/__tests__/editorial-calendar-routes.test.ts` (3/3 passés, vérifiant l'isolation multi-tenant stricte et la validation Zod).
-- **Suite globale vitest** : 65 fichiers de test, 272 tests exécutés et validés.
-
-### Test de Fumée E2E (`editorial-calendar-smoke.ts`)
-Exécuté contre la base PostgreSQL intégrée en conditions réelles :
-```bash
-./server/node_modules/.bin/tsx scripts/verification/editorial-calendar-smoke.ts
-```
-Résultat documenté dans `doc/verification/editorial-calendar.json` :
-- ✅ **Isolation stricte** : Tentative d'accès inter-entreprises rejetée avec succès.
-- ✅ **Projection Plan ➔ Calendrier** : 8 propositions de campagnes transformées en créneaux sur 4 semaines.
-- ✅ **Diversité Omnicanale** : 5 vidéos, 2 posts réseaux sociaux, 1 article et emails validés.
-- ✅ **Cycle de vie complet** : Transitions `draft` ➔ `scheduled` ➔ `in_production` ➔ `ready_for_review` ➔ `approved` ➔ `published`.
-- ✅ **Agrégation statistique** : Décompte temps réel exact.
+- **Service unit tests**: `server/src/__tests__/editorial-calendar.test.ts`.
+- **Route integration tests**: `server/src/__tests__/editorial-calendar-routes.test.ts` (strict multi-tenant isolation and Zod validation).
+- **End-to-end smoke test** (`scripts/verification/editorial-calendar-smoke.ts`), run against the embedded PostgreSQL database:
+  ```bash
+  ./server/node_modules/.bin/tsx scripts/verification/editorial-calendar-smoke.ts
+  ```
+  It checks strict isolation (a cross-company access attempt is rejected), the plan ➔ calendar projection, omnichannel diversity, the full lifecycle (`draft` ➔ `scheduled` ➔ `in_production` ➔ `ready_for_review` ➔ `approved` ➔ `published`) and the statistical aggregation.

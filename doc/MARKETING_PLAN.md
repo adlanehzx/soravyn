@@ -1,114 +1,112 @@
-# Plan Marketing Opérationnel & Validation de Gouvernance (Lot 3)
+# Operational Marketing Plan and Governance Validation
 
-Le moteur de **Plan Marketing** de **SORAVYN** transforme un objectif commercial abstrait en un plan mensuel structuré, entièrement modifiable et obligatoirement soumis à une validation de gouvernance avant exécution.
+SORAVYN's **Marketing Plan** engine turns an abstract commercial goal into a structured monthly plan that is fully editable and must go through governance validation before execution.
 
-Il s'appuie directement sur la **Mémoire de Marque (Lot 2)** (produits, personas, arguments et objections) pour générer automatiquement une progression stratégique sur 4 semaines, allouer les budgets et proposer des campagnes concrètes convertibles en un clic.
+It relies directly on the **Brand Memory** (products, personas, arguments and objections) to automatically generate a 4-week strategic progression, allocate budgets and propose concrete campaigns that can be converted in one click.
 
 ---
 
-## 1. Modèle de Données & Isolation Multi-Tenant
+## 1. Data model and multi-tenant isolation
 
-Toutes les entités sont cloisonnées au niveau du client (`company_id`) avec cascades de suppression et contrôles stricts de frontière d'entreprise.
+All entities are partitioned at client level (`company_id`) with deletion cascades and strict company-boundary checks.
 
-### Tables PostgreSQL (`@soravyn/db`)
+### PostgreSQL tables (`@soravyn/db`)
 
-1. **`marketing_plans`** : Plans marketing mensuels
+1. **`marketing_plans`**: monthly marketing plans
    - `id` (UUID PK)
    - `company_id` (UUID FK -> `companies.id` ON DELETE CASCADE)
-   - `title` (varchar 200, ex: *"Plan Marketing Novembre 2026 — Accélération Scale-Up"*)
+   - `title` (varchar 200, e.g. *"Marketing Plan November 2026 — Scale-Up Acceleration"*)
    - `description` (text)
    - `period_month` (varchar 7, format `YYYY-MM`)
-   - `commercial_goal` (varchar 1000, objectif chiffré cible)
+   - `commercial_goal` (varchar 1000, quantified target goal)
    - `target_audience` (varchar 500)
-   - `total_budget` (integer, budget global alloué)
+   - `total_budget` (integer, overall allocated budget)
    - `currency` (varchar 10, default `'EUR'`)
-   - `priorities` (jsonb string[], axes stratégiques prioritaires)
-   - `primary_channels` (jsonb string[], ex: `["LinkedIn", "YouTube", "TikTok"]`)
+   - `priorities` (jsonb string[], priority strategic axes)
+   - `primary_channels` (jsonb string[], e.g. `["LinkedIn", "YouTube", "TikTok"]`)
    - `status` (`draft` | `pending_validation` | `approved` | `rejected` | `archived`)
-   - `approval_id` (UUID nullable FK -> `approvals.id`, traçabilité de gouvernance)
+   - `approval_id` (UUID nullable FK -> `approvals.id`, governance traceability)
    - `rejection_reason` (text nullable)
-   - `kpi_targets` (jsonb, KPIs cibles du mois)
+   - `kpi_targets` (jsonb, the month's target KPIs)
    - `created_by_user_id` (varchar 255)
    - `created_at`, `updated_at`
 
-2. **`marketing_plan_themes`** : Thèmes hebdomadaires
+2. **`marketing_plan_themes`**: weekly themes
    - `id` (UUID PK)
    - `plan_id` (UUID FK -> `marketing_plans.id` ON DELETE CASCADE)
    - `company_id` (UUID FK -> `companies.id` ON DELETE CASCADE)
    - `week_number` (integer 1-52)
-   - `title` (varchar 200, ex: *"Semaine 1 : Sensibilisation & Identification du Problème"*)
+   - `title` (varchar 200, e.g. *"Week 1: Awareness and Problem Identification"*)
    - `description` (text)
    - `focus_persona_id` (UUID nullable FK -> `brand_personas.id`)
    - `focus_product_id` (UUID nullable FK -> `brand_products.id`)
-   - `allocated_budget` (integer, part du budget total)
-   - `target_kpi` (varchar 255, ex: *"50 000 impressions qualifiées"*)
+   - `allocated_budget` (integer, share of the total budget)
+   - `target_kpi` (varchar 255, e.g. *"50,000 qualified impressions"*)
    - `order_index` (integer)
 
-3. **`marketing_plan_proposals`** : Propositions de campagnes concrètes
+3. **`marketing_plan_proposals`**: concrete campaign proposals
    - `id` (UUID PK)
    - `plan_id` (UUID FK -> `marketing_plans.id` ON DELETE CASCADE)
    - `theme_id` (UUID FK -> `marketing_plan_themes.id` ON DELETE CASCADE)
    - `company_id` (UUID FK -> `companies.id` ON DELETE CASCADE)
    - `title` (varchar 255)
    - `channel` (varchar 50)
-   - `format` (varchar 50, ex: *"Video 16:9"*, *"Short 9:16"*, *"Post Carrousel"*)
-   - `angle` (text, angle marketing stratégique)
-   - `hook` (text, accroche pour capter l'attention)
-   - `call_to_action` (text, action attendue de l'audience)
+   - `format` (varchar 50, e.g. *"Video 16:9"*, *"Short 9:16"*, *"Carousel Post"*)
+   - `angle` (text, strategic marketing angle)
+   - `hook` (text, hook to capture attention)
+   - `call_to_action` (text, action expected from the audience)
    - `estimated_cost` (integer)
    - `target_audience` (varchar 255)
-   - `campaign_id` (UUID nullable FK -> `studio_campaigns.id`, lien vers la campagne créée)
+   - `campaign_id` (UUID nullable FK -> `studio_campaigns.id`, link to the campaign created)
    - `status` (`suggested` | `accepted` | `rejected` | `converted`)
 
 ---
 
-## 2. Générateur Automatisé de Plan
+## 2. Automated plan generator
 
-Le service `generateMarketingPlan(db, companyId, input, userId)` :
-1. Extrait le contexte complet de **Mémoire de Marque** du client (profil, offres avec tarification, profils personas, objections traitées).
-2. Découpe le mois cible en 4 jalons stratégiques hebdomadaires :
-   - **Semaine 1 — Sensibilisation** : Éducation sur les problèmes majeurs du persona cible, budget 25%.
-   - **Semaine 2 — Démonstration de valeur** : Focus sur la proposition de valeur et fonctionnalités du produit, budget 30%.
-   - **Semaine 3 — Preuves sociales & Objections** : Démystification des craintes via les réponses et preuves chiffrées, budget 25%.
-   - **Semaine 4 — Conversion & Accélération** : Incitation à l'action avec offres et garanties, budget 20%.
-3. Génère des propositions de campagnes ciblées associant canaux choisis (`LinkedIn`, `YouTube`, `TikTok`), formats vidéo et accroches basées sur les faits réels.
-4. Équilibre rigoureusement l'enveloppe budgétaire : la somme des budgets hebdomadaires correspond exactement au budget total défini par l'opérateur.
+The `generateMarketingPlan(db, companyId, input, userId)` service:
+1. Extracts the client's full **Brand Memory** context (profile, offers with pricing, persona profiles, handled objections).
+2. Splits the target month into 4 weekly strategic milestones:
+   - **Week 1 — Awareness**: education about the target persona's major problems, 25% of the budget.
+   - **Week 2 — Value demonstration**: focus on the value proposition and the product's features, 30% of the budget.
+   - **Week 3 — Social proof and objections**: demystifying fears through answers and figures, 25% of the budget.
+   - **Week 4 — Conversion and acceleration**: a push to act with offers and guarantees, 20% of the budget.
+3. Generates targeted campaign proposals combining the chosen channels (`LinkedIn`, `YouTube`, `TikTok`), video formats and hooks based on real facts.
+4. Rigorously balances the budget envelope: the sum of the weekly budgets equals exactly the total budget set by the operator.
 
 ---
 
-## 3. Modifiabilité & Gouvernance Humaine
+## 3. Editability and human governance
 
-### Modification continue
-Chaque plan, thème ou proposition peut être modifié, réorganisé ou complété manuellement via les endpoints REST et l'interface utilisateur :
+### Continuous editing
+Every plan, theme or proposal can be modified, reordered or completed manually through the REST endpoints and the user interface:
 - `PUT /api/companies/:companyId/studio/plans/:planId`
 - `POST/PUT/DELETE /api/companies/:companyId/studio/plans/:planId/themes`
 - `POST/PUT/DELETE /api/companies/:companyId/studio/plans/:planId/proposals`
 
-### Portail de validation
-Conformément aux principes de gouvernance SORAVYN :
-1. Le plan est initialisé en statut `draft`.
-2. L'opérateur soumet le plan à validation : `POST /api/companies/:companyId/studio/plans/:planId/submit-validation`.
-3. Une demande d'approbation est créée dans la table `approvals` (`type: "marketing_plan_validation"`).
-4. La direction ou l'opérateur habilité résout l'approbation : `POST /api/companies/:companyId/studio/plans/:planId/resolve-approval`.
-   - Si `approved` : le statut passe à `approved`, débloquant le plan pour la conversion et l'exécution.
-   - Si `rejected` : le statut passe à `rejected`, retournant le plan en révision avec motif consigné.
+### Validation gate
+In line with SORAVYN's governance principles:
+1. The plan is initialized with the `draft` status.
+2. The operator submits the plan for validation: `POST /api/companies/:companyId/studio/plans/:planId/submit-validation`.
+3. An approval request is created in the `approvals` table (`type: "marketing_plan_validation"`).
+4. Management or the authorized operator resolves the approval: `POST /api/companies/:companyId/studio/plans/:planId/resolve-approval`.
+   - If `approved`: the status becomes `approved`, unlocking the plan for conversion and execution.
+   - If `rejected`: the status becomes `rejected`, returning the plan to revision with the reason recorded.
 
 ---
 
-## 4. Conversion 1-Clic vers le Studio de Campagne
+## 4. One-click conversion to Campaign Studio
 
-Chaque proposition approuvée peut être transformée directement en campagne opérationnelle :
-- Appel : `POST /api/companies/:companyId/studio/plans/:planId/proposals/:proposalId/convert`
-- Crée immédiatement un enregistrement dans `studio_campaigns` avec nom, objectifs, audience, canal et brief complet pré-rempli.
-- Lie la proposition à la nouvelle campagne (`status: "converted"`, `campaignId: id`).
-- Empêche toute double-conversion involontaire (`409 Conflict`).
+Each approved proposal can be turned directly into an operational campaign:
+- Call: `POST /api/companies/:companyId/studio/plans/:planId/proposals/:proposalId/convert`
+- Immediately creates a record in `studio_campaigns` with name, objectives, audience, channel and a pre-filled full brief.
+- Links the proposal to the new campaign (`status: "converted"`, `campaignId: id`).
+- Prevents any unintended double conversion (`409 Conflict`).
 
 ---
 
-## 5. Preuve de Validation & Tests
+## 5. Tests
 
-- **Tests unitaires de contrats et schémas** : `server/src/__tests__/marketing-plan.test.ts` (4 tests).
-- **Tests d'isolation et sécurité de routes** : `server/src/__tests__/marketing-plan-routes.test.ts` (3 tests).
-- **Suite globale vitest** : 63 fichiers de tests, 265 tests passés.
-- **Smoke test de bout en bout** : `scripts/verification/marketing-plan-smoke.ts` validé avec succès sur PostgreSQL réel.
-- **Preuve vérifiable** : `doc/verification/marketing-plan.json`.
+- **Contract and schema unit tests**: `server/src/__tests__/marketing-plan.test.ts`.
+- **Route isolation and security tests**: `server/src/__tests__/marketing-plan-routes.test.ts`.
+- **End-to-end smoke test**: `scripts/verification/marketing-plan-smoke.ts` (against a real PostgreSQL).
